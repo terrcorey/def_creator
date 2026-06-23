@@ -1,0 +1,68 @@
+EXOMOL.def                                                                      # ID
+(27Al)(1H)                                                                      # IsoFormula
+27Al-1H                                                                         # Iso-slug
+AloHa                                                                           # Isotopologue dataset name
+20240307                                                                        # Version number with format YYYYMMDD
+13967-22-1                                                                      # CAS Registry Number
+InChI=1S/Al.H/i2*1+0                                                            # In-ChI of molecule
+SPRIOUNJHPCKPV-MHGBRSHDSA-N                                                     # In-ChI key of molecule
+2                                                                               # Number of atoms
+27                                                                              # Isotope number 1
+Al                                                                              # Element symbol 1
+1                                                                               # Isotope number 2
+H                                                                               # Element symbol 2
+27.98936366 4.64774319e-26                                                      # Isotopologue mass (Da) and (kg)
+C                                                                               # Symmetry group
+2                                                                               # Number of irreducible representations
+Sigma+                                                                          # Irreducible representation label 1
+12                                                                              # Nuclear spin degeneracy 1
+Sigma-                                                                          # Irreducible representation label 2
+12                                                                              # Nuclear spin degeneracy 2
+5000.00                                                                         # Maximum temperature of linelist
+0                                                                               # No. of pressure broadeners available
+0                                                                               # Cooling function availability (1=yes, 0=no)
+0                                                                               # Specific heat availability (1=yes, 0=no)
+1                                                                               # Photo-absorption continuum cross-sections availability (1=yes, 0=no)
+1364                                                                            # No. of states in .states file
+0                                                                               # Hyperfine resolved dataset (1=yes, 0=no)
+1                                                                               # Uncertainty availability (1=yes, 0=no)
+1                                                                               # Lifetime availability (1=yes, 0=no)
+1                                                                               # Lande g-factor availability (1=yes, 0=no)
+dos                                                                             # Quantum case label
+1                                                                               # No. of quantum number types
+7                                                                               # No. of quanta defined
++/-                                                                             # Quantum label 1
+A1 %1s                                                                          # Format quantum label 1
+Total parity: '+' or '-'                                                        # Description quantum label 1
+e/f                                                                             # Quantum label 2
+A1 %1s                                                                          # Format quantum label 2
+Rotationless-parity                                                             # Description quantum label 2
+ElecState                                                                       # Quantum label 3
+A12 %12s                                                                        # Format quantum label 3
+Electronic state                                                                # Description quantum label 3
+v                                                                               # Quantum label 4
+I3 %3d                                                                          # Format quantum label 4
+Vibrational quantum number                                                      # Description quantum label 4
+hunda:Lambda                                                                    # Quantum label 5
+I5 %5d                                                                          # Format quantum label 5
+Projection of electronic angular momentum                                       # Description quantum label 5
+hunda:Sigma                                                                     # Quantum label 6
+I5 %5d                                                                          # Format quantum label 6
+Projection of the electronic spin                                               # Description quantum label 6
+hunda:Omega                                                                     # Quantum label 7
+I5 %5d                                                                          # Format quantum label 7
+Omega = Lambda + Sigma, projection of total angular momentum                    # Description quantum label 7
+SourceType                                                                      # Auxiliary title 1
+A2 %2s                                                                          # Format title 1
+Ma=MARVEL,Ca=Calculated,EH=Effective Hamiltonian,IE=Isotopologue extrapolation  # Description title 1
+Ecal                                                                            # Auxiliary title 2
+F12.6 %12.6f                                                                    # Format title 2
+Calculated energy in cm-1                                                       # Description title 2
+29725                                                                           # Total number of transitions
+1                                                                               # No. of transition files
+24585.495814                                                                    # Maximum wavenumber (in cm-1)
+29127.903725                                                                    # Higher energy with complete set of transitions (in cm-1)
+5000.00                                                                         # Maximum temperature of partition function
+1.00                                                                            # Step size of temperature
+0.0700                                                                          # Default value of Lorentzian half-width for all lines (in cm-1/bar)
+0.500                                                                           # Default value of temperature exponent for all lines

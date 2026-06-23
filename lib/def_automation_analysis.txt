@@ -1,0 +1,312 @@
+DEF / DEF.JSON FIELD AUTOMATION ANALYSIS
+=========================================
+Generated: 2026-06-05
+Context: Fields in the ExoMol .def / def_dict.json file, given that .states, .trans,
+and .pf files are available. Automation status assessed relative to no+.py / general
+def-construction scripts.
+
+STATUS KEY
+  AUTO   — Can be derived programmatically with no human decision required
+  SEMI   — Can be approximated or partially derived, but needs verification
+  MANUAL — Requires human knowledge that cannot be inferred from the data files
+
+────────────────────────────────────────────────────────────────────────────────
+IDENTITY / HEADER FIELDS
+────────────────────────────────────────────────────────────────────────────────
+
+Field: ID ("EXOMOL.DEF")
+Status: AUTO
+Reason: Always the literal string "EXOMOL.DEF". Hardcode it.
+
+Field: Isotopologue dataset name (e.g. "NOPE", "HITRAN", "ExoAmes")
+Status: MANUAL
+Reason: The linelist name is a human-chosen identifier for the dataset/publication.
+It cannot be inferred from any data file content.
+
+Field: Version number (YYYYMMDD)
+Status: AUTO
+Reason: Use the current date at time of generation (datetime.now()). Already
+implemented in no+.py.
+
+Field: In-ChI of molecule
+Status: SEMI
+Reason: Could in principle be retrieved via pubchempy or the PubChem REST API
+using the molecular formula. However, for ions, radicals, and less common species
+the lookup may return wrong or multiple candidates. Recommend AUTO with a
+manual verification step rather than silent acceptance of the result.
+
+Field: In-ChI key of molecule
+Status: SEMI
+Reason: Same reasoning as In-ChI. The key is deterministically derived from
+the InChI, so if InChI is verified, this is AUTO.
+
+────────────────────────────────────────────────────────────────────────────────
+ISOTOPOLOGUE / ATOMIC FIELDS
+────────────────────────────────────────────────────────────────────────────────
+
+Field: Iso-slug (e.g. "14N-16O_p")
+Status: AUTO
+Reason: Directly taken from the directory name. Already implemented.
+
+Field: IsoFormula (e.g. "(14N)(16O)+")
+Status: AUTO
+Reason: Derived from iso-slug via def_utils.slug_to_formula(). Already implemented.
+
+Field: Number of atoms
+Status: AUTO
+Reason: Count the dash-separated tokens in the iso-slug (accounting for
+multiplicity suffixes like "2" in "1H-12C-14N"). Already implemented.
+
+Field: Isotope number N / Element symbol N (repeated per atom)
+Status: AUTO
+Reason: Parsed from iso-slug using regex. Already implemented.
+
+Field: Isotopologue mass (Da) and (kg)
+Status: AUTO
+Reason: Derived from isotope masses via mendeleev, with electron-mass
+correction for ions. Already implemented.
+
+────────────────────────────────────────────────────────────────────────────────
+SYMMETRY / IRREP FIELDS
+────────────────────────────────────────────────────────────────────────────────
+
+Field: Symmetry group (e.g. "C", "Cs", "C2v", "D6h")
+Status: MANUAL
+Reason: Requires knowledge of molecular geometry. Cannot be inferred from
+energy levels or transitions alone. The symmetry group is a property of the
+molecular electronic structure, not the spectroscopic data files.
+
+Field: Number of irreducible representations
+Status: MANUAL
+Reason: Follows from the symmetry group, but since the group itself is manual,
+this is too. Note: could be AUTO once the group is specified, via a lookup
+table of symmetry groups and their irrep counts.
+
+Field: Irreducible representation labels (e.g. "Sigma+", "Sigma-", "A1", "B2")
+Status: MANUAL
+Reason: Same as above. Labels are group-theory constructs tied to the choice
+of symmetry group. A lookup table approach (group → standard irrep label list)
+could automate this IF the symmetry group is already set.
+
+Field: Nuclear spin degeneracy per irrep
+Status: AUTO (heteronuclear) / MANUAL (homonuclear/polyatomics with equivalent atoms)
+Reason: For heteronuclear molecules (all distinct atoms), g_ns = product of
+(2*I_i + 1) for all atoms, and every irrep gets the same value. This is now
+fully automated via mendeleev. For homonuclear diatomics, Bose/Fermi statistics
+split the total degeneracy between symmetric and antisymmetric irreps — the
+correct assignment depends on which irrep corresponds to even/odd rotational
+levels, which is molecule-specific. For polyatomics with equivalent atoms
+(e.g. H2O, NH3), full group-theory treatment is required. These cases
+require MANUAL entry.
+
+────────────────────────────────────────────────────────────────────────────────
+LINELIST COVERAGE / AVAILABILITY FLAGS
+────────────────────────────────────────────────────────────────────────────────
+
+Field: Maximum temperature of linelist
+Status: SEMI
+Reason: The ExoMol convention is to set this to the maximum temperature at
+which the linelist is considered complete/valid. This is a scientific judgement
+about the coverage of the partition function and the completeness of energy
+levels — it cannot be objectively read from the data files. The partition
+function file (.pf) gives the temperature range used, which is a reasonable
+proxy, but the actual "maximum temperature" is a physical claim that requires
+human sign-off.
+
+Field: No. of pressure broadeners available
+Status: SEMI
+Reason: Can be auto-detected by counting .broad files in the dataset directory.
+However, deciding which broadeners are "complete enough" to advertise is a
+human judgement. Automating the file count is trivial; the scientific claim
+requires human verification.
+
+Field: Cooling function availability (1=yes, 0=no)
+Status: SEMI
+Reason: Can check for the presence of a .cool file. If it exists → 1, else → 0.
+File presence check is AUTO; ensuring the file is valid is SEMI.
+
+Field: Specific heat availability (1=yes, 0=no)
+Status: SEMI
+Reason: Same as cooling function — check for .cp file presence.
+
+Field: Photo-absorption continuum cross-sections availability (1=yes, 0=no)
+Status: MANUAL
+Reason: These are not standard ExoMol output files with a predictable name or
+extension. Whether they are provided depends on the individual dataset and
+requires human knowledge.
+
+────────────────────────────────────────────────────────────────────────────────
+STATES FILE-DERIVED FIELDS
+────────────────────────────────────────────────────────────────────────────────
+
+Field: No. of states in .states file
+Status: AUTO
+Reason: Count lines in the .states.bz2 file. Already implemented.
+
+Field: Higher energy with complete set of transitions (in cm-1)
+Status: AUTO (as implemented) / SEMI (strictly speaking)
+Reason: The current code takes the maximum energy in the .states file.
+This is a reasonable proxy, but the strict definition is the highest energy
+below which ALL transitions are present — which requires comparing state
+coverage against the partition function convergence. For most datasets the
+max-energy approximation is acceptable. Flag for manual review if the value
+seems anomalously high.
+
+Field: Hyperfine resolved dataset (1=yes, 0=no)
+Status: SEMI
+Reason: Could be auto-detected by checking if quantum labels include "F"
+(total angular momentum including nuclear spin) or by checking whether
+the number of states is anomalously high for the rotational range. However,
+the column structure of the .states file does not always make this
+unambiguous. MANUAL confirmation is safer.
+
+Field: Lifetime availability (1=yes, 0=no)
+Status: MANUAL
+Reason: The total column count in .states files is NOT fixed across datasets.
+The number of quantum number columns varies per molecule (observed: 6 to 16+
+columns across ExoMol), so you cannot determine the position of the lifetime
+column by counting from the left or right. The quantum case label is precisely
+what defines the column layout, but that label is itself a MANUAL entry (see
+below), creating a circular dependency. Heuristic detection (looking for a
+column of positive floats or "Inf" values in a plausible position) is fragile
+and unreliable for non-standard formatting. MANUAL entry is safer.
+
+Field: Uncertainty availability (1=yes, 0=no)
+Status: MANUAL
+Reason: Same as lifetime. Column position is ambiguous without knowing the
+quantum case and exact column layout. A column of small positive floats could
+be uncertainties, or it could be a quantum number or auxiliary value.
+Cannot be reliably auto-detected without first knowing the full column
+structure, which itself requires MANUAL specification.
+
+Field: Lande g-factor availability (1=yes, 0=no)
+Status: MANUAL
+Reason: Same reasoning. In practice, g-factor columns are rare; defaulting
+to 0 is reasonable, but confirming 1 requires human knowledge of whether
+the column is present and what it contains.
+
+────────────────────────────────────────────────────────────────────────────────
+QUANTUM NUMBER FIELDS
+────────────────────────────────────────────────────────────────────────────────
+
+Field: Quantum case label (e.g. "dos", "dcs", "hunda", "hundb")
+Status: MANUAL
+Reason: The quantum case label is a classification of the coupling scheme
+(Hund's case, linear/non-linear, etc.). It is a physical property of the
+electronic state being described, not readable from the energy/transition data.
+
+Field: No. of quantum number types
+Status: SEMI
+Reason: Could be partially derived from the quantum case label (once that is
+known) using a lookup table. But since the case label itself is MANUAL, this
+is SEMI at best.
+
+Field: No. of quanta defined
+Status: AUTO
+Reason: Count the quantum label entries in def_dict.json. Already tracked.
+
+Field: Quantum labels (label, format, description) — per QN
+Status: SEMI (label) / AUTO (format + description once label is known)
+Reason: The label name (e.g. "v", "J", "+/-") could theoretically be parsed
+from the .states file header if one exists, but ExoMol .states files do not
+have a standard machine-readable header. In practice the labels must be
+specified by the user. However, once the label is given, the format and
+description strings can be looked up automatically from the standard label
+library (standard_label_structure.json). This is already implemented via
+fill_label_desc().
+
+Field: Auxiliary titles (e.g. "Ecal", "SourceType") — label, format, description
+Status: SEMI
+Reason: Auxiliary columns (beyond the standard id/E/g/J/unc/tau set) are
+molecule- and dataset-specific. Their presence can be detected from column
+count, and common ones (Ecal, SourceType) can be matched against a lookup
+table. However, custom auxiliary columns require MANUAL specification.
+Format and description can be auto-filled once the title is known, same as
+quantum labels.
+
+────────────────────────────────────────────────────────────────────────────────
+TRANSITION FILE-DERIVED FIELDS
+────────────────────────────────────────────────────────────────────────────────
+
+Field: Total number of transitions
+Status: AUTO
+Reason: Count lines across all .trans.bz2 files. Already implemented.
+
+Field: No. of transition files
+Status: AUTO
+Reason: Count .trans.bz2 files in the dataset directory. Already implemented.
+
+Field: Maximum wavenumber (in cm-1)
+Status: AUTO
+Reason: Scan column 2 of all .trans.bz2 files for the maximum value.
+Already implemented.
+
+────────────────────────────────────────────────────────────────────────────────
+PARTITION FUNCTION-DERIVED FIELDS
+────────────────────────────────────────────────────────────────────────────────
+
+Field: Maximum temperature of partition function
+Status: AUTO
+Reason: Read the last temperature entry in the .pf file. Straightforward.
+Currently hardcoded to 5000 in no+.py — should be read from the file.
+
+Field: Step size of temperature
+Status: AUTO
+Reason: Read from the .pf file (difference between first two temperature
+entries). Currently hardcoded to 1 — should be read from the file.
+
+────────────────────────────────────────────────────────────────────────────────
+PRESSURE BROADENING FIELDS
+────────────────────────────────────────────────────────────────────────────────
+
+Field: Default value of Lorentzian half-width (in cm-1/bar)
+Status: MANUAL
+Reason: This is a physically meaningful default that must come from
+experimental or theoretical data. Cannot be derived from .states or .trans.
+
+Field: Default value of temperature exponent
+Status: MANUAL
+Reason: Same as above.
+
+────────────────────────────────────────────────────────────────────────────────
+SUMMARY TABLE
+────────────────────────────────────────────────────────────────────────────────
+
+AUTO (already implemented):
+  - ID, Iso-slug, IsoFormula, Number of atoms, Isotope number/symbol,
+    Isotopologue mass, Version number, No. of states, No. of transitions,
+    No. of transition files, Max wavenumber, No. of quanta defined,
+    Format/description of known quantum labels (via standard_label_structure)
+
+AUTO (not yet implemented — recommended additions):
+  - Max temperature of partition function (from .pf file)
+  - Step size of temperature (from .pf file)
+  - No. of pressure broadeners (from .broad file count)
+  - Cooling function / Specific heat availability (from .cool / .cp file presence)
+  - Higher energy with complete transitions (already done, but should flag if
+    suspiciously close to max energy)
+
+SEMI (automatable with caveats / needs verification):
+  - In-ChI / In-ChI key (PubChem lookup, unreliable for ions/radicals)
+  - Max temperature of linelist (use .pf range as proxy, human confirms)
+  - Quantum labels — names only (human provides; format/desc auto-filled)
+  - Auxiliary labels — common ones auto-matched, custom ones manual
+  - Nuclear spin degeneracy for homonuclear molecules
+
+MANUAL (cannot be automated):
+  - Isotopologue dataset name
+  - Symmetry group
+  - Number of irreducible representations
+  - Irreducible representation labels
+  - Nuclear spin degeneracy (homonuclear / equivalent-atom polyatomics)
+  - Quantum case label
+  - Lifetime / Uncertainty / Lande-g availability: .states column count is NOT
+    fixed across datasets (observed 6–16+ cols). QN column count varies per
+    molecule, so positional column detection is impossible without first knowing
+    the full column schema. The quantum case label defines the layout but is
+    itself MANUAL — circular dependency. Column-sniffing heuristics are
+    unreliable for non-standard formatting. MANUAL entry required.
+  - Hyperfine resolved: same column-ambiguity problem as above
+  - Default Lorentzian half-width and temperature exponent
+  - Photo-absorption continuum availability
+  - Maximum temperature of linelist (final sign-off)

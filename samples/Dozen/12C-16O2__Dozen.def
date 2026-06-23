@@ -1,0 +1,96 @@
+EXOMOL.def                                                                      # ID
+(12C)(16O)2                                                                     # IsoFormula
+12C-16O2                                                                        # Iso-slug
+Dozen                                                                           # Isotopologue dataset name
+20260115                                                                        # Version number with format YYYYMMDD
+124-38-9                                                                        # CAS Registry Number
+InChI=1S/CO2/c2-1-3                                                             # In-ChI of molecule
+CURLTUGMZLYLDI-UHFFFAOYSA-N                                                     # In-ChI key of molecule
+3                                                                               # Number of atoms
+12                                                                              # Isotope number 1
+C                                                                               # Element symbol 1
+16                                                                              # Isotope number 2
+O                                                                               # Element symbol 2
+43.98982924 7.30468301e-26                                                      # Isotopologue mass (Da) and (kg)
+C2v                                                                             # Symmetry group
+4                                                                               # Number of irreducible representations
+A1                                                                              # Irreducible representation label 1
+1                                                                               # Nuclear spin degeneracy 1
+A2                                                                              # Irreducible representation label 2
+1                                                                               # Nuclear spin degeneracy 2
+B1                                                                              # Irreducible representation label 3
+0                                                                               # Nuclear spin degeneracy 3
+B2                                                                              # Irreducible representation label 4
+0                                                                               # Nuclear spin degeneracy 4
+4000.00                                                                         # Maximum temperature of linelist
+0                                                                               # No. of pressure broadeners available
+0                                                                               # Cooling function availability (1=yes, 0=no)
+1                                                                               # Specific heat availability (1=yes, 0=no)
+0                                                                               # Photo-absorption continuum cross-sections availability (1=yes, 0=no)
+3646814                                                                         # No. of states in .states file
+0                                                                               # Hyperfine resolved dataset (1=yes, 0=no)
+1                                                                               # Uncertainty availability (1=yes, 0=no)
+1                                                                               # Lifetime availability (1=yes, 0=no)
+0                                                                               # Lande g-factor availability (1=yes, 0=no)
+lpcs                                                                            # Quantum case label
+3                                                                               # No. of quantum number types
+15                                                                              # No. of quanta defined
+Grve                                                                            # Quantum label 1
+A3 %3s                                                                          # Format quantum label 1
+Total (rovibronic) symmetry                                                     # Description quantum label 1
+e/f                                                                             # Quantum label 2
+A1 %1s                                                                          # Format quantum label 2
+Rotationless-parity                                                             # Description quantum label 2
+Herzberg:v1                                                                     # Quantum label 3
+I2  %2d                                                                         # Format quantum label 3
+Normal mode stretching symmetry QN                                              # Description quantum label 3
+Herzberg:v2                                                                     # Quantum label 4
+I2  %2d                                                                         # Format quantum label 4
+Normal mode linear molecule bending QN                                          # Description quantum label 4
+Herzberg:l2                                                                     # Quantum label 5
+I2  %2d                                                                         # Format quantum label 5
+Vibrational bending QN (Similar but not identical to standard l2)               # Description quantum label 5
+Herzberg:v3                                                                     # Quantum label 6
+I2  %2d                                                                         # Format quantum label 6
+Normal mode stretching asymmetric QN                                            # Description quantum label 6
+TROVE: Coef                                                                     # Quantum label 7
+F5.2 %5.2f                                                                      # Format quantum label 7
+Coefficient with the largest contribution                                       # Description quantum label 7
+AFGL:m1                                                                         # Quantum label 8
+I2  %2d                                                                         # Format quantum label 8
+Symmetric vibrational Fermi-resonullce group QN (-1=not available)              # Description quantum label 8
+AFGL:m2                                                                         # Quantum label 9
+I2  %2d                                                                         # Format quantum label 9
+Vibrational bending QN (Similar but not identical to standard n2lin)            # Description quantum label 9
+AFGL:l2                                                                         # Quantum label 10
+I2  %2d                                                                         # Format quantum label 10
+Vibrational bending QN (Similar but not identical to standard l2)               # Description quantum label 10
+AFGL:m3                                                                         # Quantum label 11
+I3 %3d                                                                          # Format quantum label 11
+Asymmetric vibrational stretching QN (equivalent to n3)                         # Description quantum label 11
+AFGL:r                                                                          # Quantum label 12
+I2  %2d                                                                         # Format quantum label 12
+Fermi-resonullce group ranking QN                                               # Description quantum label 12
+TROVE:n1                                                                        # Quantum label 13
+I2  %2d                                                                         # Format quantum label 13
+TROVE stretching vibrational QN1                                                # Description quantum label 13
+TROVE:n2                                                                        # Quantum label 14
+I2  %2d                                                                         # Format quantum label 14
+TROVE stretching vibrational QN2                                                # Description quantum label 14
+TROVE:n3                                                                        # Quantum label 15
+I2  %2d                                                                         # Format quantum label 15
+TROVE stretching vibrational QN3                                                # Description quantum label 15
+SourceType                                                                      # Auxiliary title 1
+A2 %2s                                                                          # Format title 1
+Ma=MARVEL,Ca=Calculated,EH=Effective Hamiltonian,IE=Isotopologue extrapolation  # Description title 1
+Ecal                                                                            # Auxiliary title 2
+F12.6 %12.6f                                                                    # Format title 2
+Calculated energy in cm-1                                                       # Description title 2
+3235666965                                                                      # Total number of transitions
+20                                                                              # No. of transition files
+20000.00                                                                        # Maximum wavenumber (in cm-1)
+16000.00                                                                        # Higher energy with complete set of transitions (in cm-1)
+5000.00                                                                         # Maximum temperature of partition function
+1.00                                                                            # Step size of temperature
+0.1063                                                                          # Default value of Lorentzian half-width for all lines (in cm-1/bar)
+0.695                                                                           # Default value of temperature exponent for all lines

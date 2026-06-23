@@ -1,0 +1,199 @@
+{
+    "isotopologue": {
+        "iso_formula": "(12C)(16O)2",
+        "iso_slug": "12C-16O2",
+        "inchi": "InChI=1S/CO2/c2-1-3",
+        "inchikey": "CURLTUGMZLYLDI-UHFFFAOYSA-N",
+        "cas_registry_number": "124-38-9",
+        "mass_in_Da": 43.98982924,
+        "point_group": "C2v"
+    },
+    "atoms": {
+        "number_of_atoms": 3,
+        "element": {
+            "C": 12,
+            "O": 16
+        }
+    },
+    "irreducible_representations": {
+        "A1": 1,
+        "A2": 1,
+        "B1": 0,
+        "B2": 0
+    },
+    "dataset": {
+        "name": "Dozen",
+        "version": 20260115,
+        "doi": "10.1093/mnras/staf2135",
+        "max_temperature": 4000.0,
+        "num_pressure_broadeners": 0,
+        "cooling_function_available": false,
+        "specific_heat_available": true,
+        "continuum": false,
+        "states": {
+            "number_of_states": 3646814,
+            "max_energy": 16000.0,
+            "hyperfine_resolved_dataset": false,
+            "uncertainty_description": null,
+            "uncertainties_available": true,
+            "lifetime_available": true,
+            "lande_g_available": false,
+            "quantum_case_label": "lpcs",
+            "num_quanta": 15,
+            "num_quantum_types": 3,
+            "states_file_fields": [
+                {
+                    "name": "ID",
+                    "desc": "Unique integer identifier for the energy level",
+                    "ffmt": "I12",
+                    "cfmt": "%12d"
+                },
+                {
+                    "name": "E",
+                    "desc": "State energy in cm-1",
+                    "ffmt": "F12.6",
+                    "cfmt": "%12.6f"
+                },
+                {
+                    "name": "gtot",
+                    "desc": "Total energy level degeneracy",
+                    "ffmt": "I6",
+                    "cfmt": "%6d"
+                },
+                {
+                    "name": "J",
+                    "desc": "Total rotational quantum number, excluding nuclear spin",
+                    "ffmt": "I7",
+                    "cfmt": "%7d"
+                },
+                {
+                    "name": "unc",
+                    "desc": "Energy uncertainty in cm-1",
+                    "ffmt": "F12.6",
+                    "cfmt": "%12.6f"
+                },
+                {
+                    "name": "tau",
+                    "desc": "Lifetime in s",
+                    "ffmt": "ES12.4",
+                    "cfmt": "%12.4e"
+                },
+                {
+                    "name": "Grve",
+                    "ffmt": "A3",
+                    "cfmt": "%3s",
+                    "desc": "Total (rovibronic) symmetry"
+                },
+                {
+                    "name": "e/f",
+                    "ffmt": "A1",
+                    "cfmt": "%1s",
+                    "desc": "Rotationless-parity"
+                },
+                {
+                    "name": "Herzberg:v1",
+                    "ffmt": "I2",
+                    "cfmt": " %2d",
+                    "desc": "Normal mode stretching symmetry QN"
+                },
+                {
+                    "name": "Herzberg:v2",
+                    "ffmt": "I2",
+                    "cfmt": " %2d",
+                    "desc": "Normal mode linear molecule bending QN"
+                },
+                {
+                    "name": "Herzberg:l2",
+                    "ffmt": "I2",
+                    "cfmt": " %2d",
+                    "desc": "Vibrational bending QN (Similar but not identical to standard l2)"
+                },
+                {
+                    "name": "Herzberg:v3",
+                    "ffmt": "I2",
+                    "cfmt": " %2d",
+                    "desc": "Normal mode stretching asymmetric QN"
+                },
+                {
+                    "name": "TROVE: Coef",
+                    "ffmt": "F5.2",
+                    "cfmt": "%5.2f",
+                    "desc": "Coefficient with the largest contribution"
+                },
+                {
+                    "name": "AFGL:m1",
+                    "ffmt": "I2",
+                    "cfmt": " %2d",
+                    "desc": "Symmetric vibrational Fermi-resonullce group QN (-1=not available)"
+                },
+                {
+                    "name": "AFGL:m2",
+                    "ffmt": "I2",
+                    "cfmt": " %2d",
+                    "desc": "Vibrational bending QN (Similar but not identical to standard n2lin)"
+                },
+                {
+                    "name": "AFGL:l2",
+                    "ffmt": "I2",
+                    "cfmt": " %2d",
+                    "desc": "Vibrational bending QN (Similar but not identical to standard l2)"
+                },
+                {
+                    "name": "AFGL:m3",
+                    "ffmt": "I3",
+                    "cfmt": "%3d",
+                    "desc": "Asymmetric vibrational stretching QN (equivalent to n3)"
+                },
+                {
+                    "name": "AFGL:r",
+                    "ffmt": "I2",
+                    "cfmt": " %2d",
+                    "desc": "Fermi-resonullce group ranking QN"
+                },
+                {
+                    "name": "TROVE:n1",
+                    "ffmt": "I2",
+                    "cfmt": " %2d",
+                    "desc": "TROVE stretching vibrational QN1"
+                },
+                {
+                    "name": "TROVE:n2",
+                    "ffmt": "I2",
+                    "cfmt": " %2d",
+                    "desc": "TROVE stretching vibrational QN2"
+                },
+                {
+                    "name": "TROVE:n3",
+                    "ffmt": "I2",
+                    "cfmt": " %2d",
+                    "desc": "TROVE stretching vibrational QN3"
+                },
+                {
+                    "name": "Auxiliary:SourceType",
+                    "ffmt": "A2",
+                    "cfmt": "%2s",
+                    "desc": "Ma=MARVEL,Ca=Calculated,EH=Effective Hamiltonian,IE=Isotopologue extrapolation"
+                },
+                {
+                    "name": "Auxiliary:Ecal",
+                    "ffmt": "F12.6",
+                    "cfmt": "%12.6f",
+                    "desc": "Calculated energy in cm-1"
+                }
+            ]
+        },
+        "transitions": {
+            "number_of_transitions": 3235666965,
+            "number_of_transition_files": 20,
+            "max_wavenumber": 20000.0
+        }
+    },
+    "partition_function": {
+        "max_partition_function_temperature": 5000.0,
+        "partition_function_step_size": 1.0
+    },
+    "broad": {
+        "default_Lorentzian_half-width": 0.1063,
+        "default_temperature_exponent": 0.695
+    }
+}

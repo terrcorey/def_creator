@@ -1,0 +1,51 @@
+{
+    "isotopologue": {
+        "iso_formula": null,
+        "iso_slug": null,
+        "inchi": null,
+        "inchikey": null,
+        "cas_registry_number": null,
+        "mass_in_Da": null,
+        "point_group": null
+    },
+    "atoms": {
+        "number_of_atoms": null,
+        "element": {}
+    },
+    "irreducible_representations": {
+        "Sigma+": null,
+        "Sigma-": null
+    },
+    "dataset": {
+        "name": null,
+        "version": null,
+        "doi": null,
+        "max_temperature": null,
+        "num_pressure_broadeners": null,
+        "cooling_function_available": null,
+        "specific_heat_available": null,
+        "continuum": null,
+        "states": {
+            "number_of_states": null,
+            "max_energy": null,
+            "hyperfine_resolved_dataset": null,
+            "uncertainty_description": null,
+            "uncertainties_available": null,
+            "lifetime_available": null,
+            "lande_g_available": null,
+            "quantum_case_label": null,
+            "num_quanta": null,
+            "num_quantum_types": null,
+            "states_file_fields": []
+        },
+        "transitions": {
+            "number_of_transitions": null,
+            "number_of_transition_files": null,
+            "max_wavenumber": null
+        }
+    },
+    "partition_function": {
+        "max_partition_function_temperature": null,
+        "partition_function_step_size": null
+    }
+}
