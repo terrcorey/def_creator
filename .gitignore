@@ -1,0 +1,22 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.venv/
+venv/
+*.egg-info/
+
+# Logs
+*.log
+
+# Temp files produced by --init (replaced by final .def.json after build)
+*__temp.def.json
+
+# Generated output files (reproducible from data + .inp)
+*.def
+*.def.json
+!samples/**/ref/*.def
+!samples/**/ref/*.def.json
+
+# Scratch
+scratchpad.ipynb
