@@ -155,6 +155,7 @@ def generate_blank_inp(
     out.append("[dataset]")
     if verbose:
         out += [
+            "# version_date               Version date in YYYYMMDD format (defaults to today — edit to override)",
             "# doi                        Publication DOI (e.g. 10.1093/mnras/stad3802)",
             "#                            Set to None if not yet published — regenerate once a DOI is assigned",
             "# max_temperature            Maximum temperature of the linelist in K (author-stated, not the .pf max)",
@@ -164,6 +165,7 @@ def generate_blank_inp(
             input_separator,
         ]
     out += _align_section([
+        ("version_date",               date.today().strftime("%Y%m%d")),
         ("doi",                        ""),
         ("max_temperature",            ""),
         ("cooling_function_available", "false"),
@@ -457,6 +459,11 @@ def parse_inp(inp_path: Path) -> dict:
     # Parse [dataset]
     dataset_kv = _kv_pairs(sections.get("dataset", []))
     dataset_out: dict = {}
+    if "version_date" in dataset_kv and dataset_kv["version_date"]:
+        try:
+            dataset_out["version"] = int(dataset_kv["version_date"])
+        except ValueError:
+            pass  # validate_inp will report the invalid value
     if "doi" in dataset_kv:
         dataset_out["doi"] = dataset_kv["doi"] or None
     if "max_temperature" in dataset_kv and dataset_kv["max_temperature"]:
@@ -591,6 +598,23 @@ def validate_inp(inp_path: Path, known_iso_slugs: list[str]) -> list[str]:
         dataset_kv: dict[str, str] = {}
     else:
         dataset_kv = _kv_pairs(sections["dataset"])
+
+        vd_val = dataset_kv.get("version_date", "").strip()
+        if not vd_val:
+            errors.append(
+                "[dataset] version_date is blank.\n"
+                "  → Enter the version date, e.g.:  version_date = 20240307"
+            )
+        else:
+            try:
+                vd_int = int(vd_val)
+                if len(vd_val) != 8 or not (19000101 <= vd_int <= 99991231):
+                    raise ValueError
+            except ValueError:
+                errors.append(
+                    f"[dataset] version_date = \"{vd_val}\" is not a valid date.\n"
+                    f"  → Use YYYYMMDD format, e.g.:  version_date = 20240307"
+                )
 
         doi_val = dataset_kv.get("doi", "").strip()
         if not doi_val:

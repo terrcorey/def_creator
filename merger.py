@@ -102,7 +102,7 @@ def merge_iso(auto_dict: dict, user_dict: dict) -> dict:
         merged["irreducible_representations"] = user_dict["irreducible_representations"]
 
     dataset = merged.setdefault("dataset", {})
-    for key in ("doi", "max_temperature", "cooling_function_available",
+    for key in ("version", "doi", "max_temperature", "cooling_function_available",
                 "specific_heat_available", "continuum"):
         if key in user_dict:
             dataset[key] = user_dict[key]
