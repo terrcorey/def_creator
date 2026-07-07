@@ -647,3 +647,168 @@
 2026-07-07 12:22:39,043 - INFO - renderer: wrote 39 lines to '/home/tcorey/Desktop/workspace/def_creator/samples/AloHa/27Al-1H/27Al-1H__AloHa.def'
 2026-07-07 12:22:39,044 - INFO - context: wrote '/home/tcorey/Desktop/workspace/def_creator/samples/AloHa/27Al-1H/27Al-1H__AloHa.def'
 2026-07-07 12:22:39,044 - INFO - context: wrote '/home/tcorey/Desktop/workspace/def_creator/samples/AloHa/27Al-1H/27Al-1H__AloHa.def.json', removed temp '/home/tcorey/Desktop/workspace/def_creator/samples/AloHa/27Al-1H/27Al-1H__AloHa__temp.def.json'
+2026-07-07 14:59:24,019 - INFO - create_def: work_dir='/home/tcorey/Desktop/workspace/def_creator/samples/COmet', ds_name='COmet', format='exomol', init=True
+2026-07-07 14:59:24,019 - INFO - context: run_init for '/home/tcorey/Desktop/workspace/def_creator/samples/COmet' (ds_name='COmet')
+2026-07-07 14:59:24,020 - INFO - validator: checking '12C_16O_p' in '/home/tcorey/Desktop/workspace/def_creator/samples/COmet/12C_16O_p'
+2026-07-07 14:59:24,034 - INFO - validator: '12C_16O_p' passed
+2026-07-07 14:59:24,034 - INFO - context: extracting data for '12C_16O_p'
+2026-07-07 14:59:24,034 - INFO - extractor: extract_all for '12C_16O_p' in '/home/tcorey/Desktop/workspace/def_creator/samples/COmet/12C_16O_p'
+2026-07-07 14:59:24,034 - INFO - extractor: extract_iso_info for '12C_16O_p'
+2026-07-07 15:00:11,882 - INFO - create_def: work_dir='/home/tcorey/Desktop/workspace/def_creator/samples/COmet', ds_name='COmet', format='exomol', init=True
+2026-07-07 15:00:11,882 - INFO - context: run_init for '/home/tcorey/Desktop/workspace/def_creator/samples/COmet' (ds_name='COmet')
+2026-07-07 15:00:11,883 - INFO - validator: checking '12C_16O_p' in '/home/tcorey/Desktop/workspace/def_creator/samples/COmet/12C_16O_p'
+2026-07-07 15:00:11,897 - INFO - validator: '12C_16O_p' passed
+2026-07-07 15:00:11,897 - INFO - context: extracting data for '12C_16O_p'
+2026-07-07 15:00:11,897 - INFO - extractor: extract_all for '12C_16O_p' in '/home/tcorey/Desktop/workspace/def_creator/samples/COmet/12C_16O_p'
+2026-07-07 15:00:11,897 - INFO - extractor: extract_iso_info for '12C_16O_p'
+2026-07-07 15:00:39,705 - INFO - create_def: work_dir='/home/tcorey/Desktop/workspace/def_creator/samples/COmet', ds_name='COmet', format='exomol', init=True
+2026-07-07 15:00:39,705 - INFO - context: run_init for '/home/tcorey/Desktop/workspace/def_creator/samples/COmet' (ds_name='COmet')
+2026-07-07 15:00:39,705 - INFO - validator: checking '12C_16O_p' in '/home/tcorey/Desktop/workspace/def_creator/samples/COmet/12C_16O_p'
+2026-07-07 15:00:39,719 - INFO - validator: '12C_16O_p' passed
+2026-07-07 15:00:39,719 - INFO - context: extracting data for '12C_16O_p'
+2026-07-07 15:00:39,719 - INFO - extractor: extract_all for '12C_16O_p' in '/home/tcorey/Desktop/workspace/def_creator/samples/COmet/12C_16O_p'
+2026-07-07 15:00:39,719 - INFO - extractor: extract_iso_info for '12C_16O_p'
+2026-07-07 16:30:48,385 - INFO - create_def: work_dir='/home/tcorey/Desktop/workspace/def_creator/samples/COmet', ds_name='COmet', format='exomol', init=True
+2026-07-07 16:30:48,385 - INFO - context: run_init for '/home/tcorey/Desktop/workspace/def_creator/samples/COmet' (ds_name='COmet')
+2026-07-07 16:30:48,385 - INFO - validator: checking '12C-16O_p' in '/home/tcorey/Desktop/workspace/def_creator/samples/COmet/12C-16O_p'
+2026-07-07 16:30:48,399 - INFO - validator: '12C-16O_p' passed
+2026-07-07 16:30:48,399 - INFO - context: extracting data for '12C-16O_p'
+2026-07-07 16:30:48,399 - INFO - extractor: extract_all for '12C-16O_p' in '/home/tcorey/Desktop/workspace/def_creator/samples/COmet/12C-16O_p'
+2026-07-07 16:30:48,400 - INFO - extractor: extract_iso_info for '12C-16O_p'
+2026-07-07 16:30:48,627 - INFO - extractor: extract_states_info in '/home/tcorey/Desktop/workspace/def_creator/samples/COmet/12C-16O_p'
+2026-07-07 16:30:48,657 - INFO - extractor: 29137 states, max_energy=83810.271943 cm-1
+2026-07-07 16:30:48,657 - INFO - extractor: extract_transitions_info in '/home/tcorey/Desktop/workspace/def_creator/samples/COmet/12C-16O_p'
+2026-07-07 16:30:51,955 - INFO - extractor: 10339562 transitions across 1 file(s), max_wavenumber=81598.417718 cm-1
+2026-07-07 16:30:51,955 - INFO - extractor: extract_pf_info in '/home/tcorey/Desktop/workspace/def_creator/samples/COmet/12C-16O_p'
+2026-07-07 16:30:51,959 - INFO - extractor: pf max_temp=15000.0 K, step=1.0 K
+2026-07-07 16:30:51,960 - INFO - context: wrote temp cache '/home/tcorey/Desktop/workspace/def_creator/samples/COmet/12C-16O_p/12C-16O_p__COmet__temp.def.json'
+2026-07-07 16:30:51,960 - INFO - context: summarising states columns for '12C-16O_p'
+2026-07-07 16:30:51,960 - INFO - extractor: summarise_states_columns in '/home/tcorey/Desktop/workspace/def_creator/samples/COmet/12C-16O_p'
+2026-07-07 16:30:52,159 - INFO - inp_handler: wrote '/home/tcorey/Desktop/workspace/def_creator/samples/COmet/COmet.inp'
+2026-07-07 16:56:21,197 - INFO - create_def: work_dir='/home/tcorey/Desktop/workspace/def_creator/samples/AloHa', ds_name='AloHa', format='exomol', init=True
+2026-07-07 16:56:21,197 - INFO - context: run_init for '/home/tcorey/Desktop/workspace/def_creator/samples/AloHa' (ds_name='AloHa')
+2026-07-07 16:56:21,197 - INFO - validator: checking '27Al-1H' in '/home/tcorey/Desktop/workspace/def_creator/samples/AloHa/27Al-1H'
+2026-07-07 16:56:21,208 - INFO - validator: '27Al-1H' passed
+2026-07-07 16:56:21,209 - INFO - context: extracting data for '27Al-1H'
+2026-07-07 16:56:21,209 - INFO - extractor: extract_all for '27Al-1H' in '/home/tcorey/Desktop/workspace/def_creator/samples/AloHa/27Al-1H'
+2026-07-07 16:56:21,209 - INFO - extractor: extract_iso_info for '27Al-1H'
+2026-07-07 16:56:21,395 - INFO - extractor: extract_states_info in '/home/tcorey/Desktop/workspace/def_creator/samples/AloHa/27Al-1H'
+2026-07-07 16:56:21,397 - INFO - extractor: 1364 states, max_energy=29127.903725 cm-1
+2026-07-07 16:56:21,397 - INFO - extractor: extract_transitions_info in '/home/tcorey/Desktop/workspace/def_creator/samples/AloHa/27Al-1H'
+2026-07-07 16:56:21,412 - INFO - extractor: 29725 transitions across 1 file(s), max_wavenumber=24585.495814 cm-1
+2026-07-07 16:56:21,412 - INFO - extractor: extract_pf_info in '/home/tcorey/Desktop/workspace/def_creator/samples/AloHa/27Al-1H'
+2026-07-07 16:56:21,414 - INFO - extractor: pf max_temp=5000.0 K, step=1.0 K
+2026-07-07 16:56:40,013 - WARNING - extractor: PubChem lookup failed for 'AlH': <urlopen error [Errno -2] Name or service not known>
+2026-07-07 16:56:40,014 - INFO - context: wrote temp cache '/home/tcorey/Desktop/workspace/def_creator/samples/AloHa/27Al-1H/27Al-1H__AloHa__temp.def.json'
+2026-07-07 16:56:40,014 - INFO - context: summarising states columns for '27Al-1H'
+2026-07-07 16:56:40,014 - INFO - extractor: summarise_states_columns in '/home/tcorey/Desktop/workspace/def_creator/samples/AloHa/27Al-1H'
+2026-07-07 16:56:40,062 - INFO - inp_handler: wrote '/home/tcorey/Desktop/workspace/def_creator/samples/AloHa/AloHa.inp'
+2026-07-07 16:59:50,002 - INFO - create_def: work_dir='/home/tcorey/Desktop/workspace/def_creator/samples/COmet', ds_name='COmet', format='exomol', init=True
+2026-07-07 16:59:50,003 - INFO - context: run_init for '/home/tcorey/Desktop/workspace/def_creator/samples/COmet' (ds_name='COmet')
+2026-07-07 16:59:50,003 - INFO - validator: checking '12C-16O_p' in '/home/tcorey/Desktop/workspace/def_creator/samples/COmet/12C-16O_p'
+2026-07-07 16:59:50,009 - INFO - validator: '12C-16O_p' passed
+2026-07-07 16:59:50,010 - INFO - context: extracting data for '12C-16O_p'
+2026-07-07 16:59:50,010 - INFO - extractor: extract_all for '12C-16O_p' in '/home/tcorey/Desktop/workspace/def_creator/samples/COmet/12C-16O_p'
+2026-07-07 16:59:50,010 - INFO - extractor: extract_iso_info for '12C-16O_p'
+2026-07-07 16:59:50,130 - INFO - extractor: extract_states_info in '/home/tcorey/Desktop/workspace/def_creator/samples/COmet/12C-16O_p'
+2026-07-07 16:59:50,145 - INFO - extractor: 29137 states, max_energy=83810.271943 cm-1
+2026-07-07 16:59:50,145 - INFO - extractor: extract_transitions_info in '/home/tcorey/Desktop/workspace/def_creator/samples/COmet/12C-16O_p'
+2026-07-07 16:59:53,498 - INFO - extractor: 10339562 transitions across 1 file(s), max_wavenumber=81598.417718 cm-1
+2026-07-07 16:59:53,498 - INFO - extractor: extract_pf_info in '/home/tcorey/Desktop/workspace/def_creator/samples/COmet/12C-16O_p'
+2026-07-07 16:59:53,502 - INFO - extractor: pf max_temp=15000.0 K, step=1.0 K
+2026-07-07 16:59:54,654 - WARNING - extractor: PubChem lookup failed for 'CO': 'PropertyTable'
+2026-07-07 16:59:54,655 - INFO - context: wrote temp cache '/home/tcorey/Desktop/workspace/def_creator/samples/COmet/12C-16O_p/12C-16O_p__COmet__temp.def.json'
+2026-07-07 16:59:54,655 - INFO - context: summarising states columns for '12C-16O_p'
+2026-07-07 16:59:54,655 - INFO - extractor: summarise_states_columns in '/home/tcorey/Desktop/workspace/def_creator/samples/COmet/12C-16O_p'
+2026-07-07 16:59:54,865 - INFO - inp_handler: wrote '/home/tcorey/Desktop/workspace/def_creator/samples/COmet/COmet.inp'
+2026-07-07 17:49:11,731 - INFO - create_def: work_dir='/home/tcorey/Desktop/workspace/def_creator/samples/COmet', ds_name='COmet', format='exomol', init=True
+2026-07-07 17:49:11,731 - INFO - context: run_init for '/home/tcorey/Desktop/workspace/def_creator/samples/COmet' (ds_name='COmet', force=True)
+2026-07-07 17:49:11,732 - INFO - context: --force: removed '/home/tcorey/Desktop/workspace/def_creator/samples/COmet/COmet.inp'
+2026-07-07 17:49:11,732 - INFO - context: --force: removed '/home/tcorey/Desktop/workspace/def_creator/samples/COmet/12C-16O_p/12C-16O_p__COmet__temp.def.json'
+2026-07-07 17:49:11,732 - INFO - validator: checking '12C-16O_p' in '/home/tcorey/Desktop/workspace/def_creator/samples/COmet/12C-16O_p'
+2026-07-07 17:49:11,747 - INFO - validator: '12C-16O_p' passed
+2026-07-07 17:49:11,747 - INFO - context: extracting data for '12C-16O_p'
+2026-07-07 17:49:11,871 - INFO - context: auto-derived SMILES/InChI/InChIKey for '12C-16O_p'
+2026-07-07 17:49:11,871 - INFO - extractor: extract_all for '12C-16O_p' in '/home/tcorey/Desktop/workspace/def_creator/samples/COmet/12C-16O_p'
+2026-07-07 17:49:11,871 - INFO - extractor: extract_iso_info for '12C-16O_p'
+2026-07-07 17:49:12,096 - INFO - extractor: extract_states_info in '/home/tcorey/Desktop/workspace/def_creator/samples/COmet/12C-16O_p'
+2026-07-07 17:49:12,123 - INFO - extractor: 29137 states, max_energy=83810.271943 cm-1
+2026-07-07 17:49:12,123 - INFO - extractor: extract_transitions_info in '/home/tcorey/Desktop/workspace/def_creator/samples/COmet/12C-16O_p'
+2026-07-07 17:49:15,647 - INFO - extractor: 10339562 transitions across 1 file(s), max_wavenumber=81598.417718 cm-1
+2026-07-07 17:49:15,647 - INFO - extractor: extract_pf_info in '/home/tcorey/Desktop/workspace/def_creator/samples/COmet/12C-16O_p'
+2026-07-07 17:49:15,652 - INFO - extractor: pf max_temp=15000.0 K, step=1.0 K
+2026-07-07 17:49:15,653 - INFO - context: wrote temp cache '/home/tcorey/Desktop/workspace/def_creator/samples/COmet/12C-16O_p/12C-16O_p__COmet__temp.def.json'
+2026-07-07 17:49:15,653 - INFO - context: summarising states columns for '12C-16O_p'
+2026-07-07 17:49:15,653 - INFO - extractor: summarise_states_columns in '/home/tcorey/Desktop/workspace/def_creator/samples/COmet/12C-16O_p'
+2026-07-07 17:49:15,869 - INFO - inp_handler: wrote '/home/tcorey/Desktop/workspace/def_creator/samples/COmet/COmet.inp'
+2026-07-07 18:13:04,109 - INFO - create_def: work_dir='/home/tcorey/Desktop/workspace/def_creator/samples/COmet', ds_name='COmet', format='exomol', init=False
+2026-07-07 18:13:04,109 - INFO - context: run_build for '/home/tcorey/Desktop/workspace/def_creator/samples/COmet' (ds_name='COmet')
+2026-07-07 18:13:04,110 - INFO - inp_handler: parsing '/home/tcorey/Desktop/workspace/def_creator/samples/COmet/COmet.inp'
+2026-07-07 18:13:04,110 - INFO - inp_handler: parsed 1 isotopologue(s): ['12C-16O_p']
+2026-07-07 18:13:04,231 - WARNING - inchi: RDKit could not parse SMILES '[12C][16O]+' for '12C-16O_p'
+2026-07-07 18:13:20,890 - INFO - create_def: work_dir='/home/tcorey/Desktop/workspace/def_creator/samples/COmet', ds_name='COmet', format='exomol', init=False
+2026-07-07 18:13:20,890 - INFO - context: run_build for '/home/tcorey/Desktop/workspace/def_creator/samples/COmet' (ds_name='COmet')
+2026-07-07 18:13:20,890 - INFO - inp_handler: parsing '/home/tcorey/Desktop/workspace/def_creator/samples/COmet/COmet.inp'
+2026-07-07 18:13:20,891 - INFO - inp_handler: parsed 1 isotopologue(s): ['12C-16O_p']
+2026-07-07 18:13:21,012 - INFO - context: building '12C-16O_p'
+2026-07-07 18:13:21,012 - INFO - merger: '12C-16O_p' all required fields present
+2026-07-07 18:13:21,013 - INFO - renderer: ExoMolRenderer writing '/home/tcorey/Desktop/workspace/def_creator/samples/COmet/12C-16O_p/12C-16O_p__COmet.def'
+2026-07-07 18:13:21,013 - INFO - renderer: wrote 59 lines to '/home/tcorey/Desktop/workspace/def_creator/samples/COmet/12C-16O_p/12C-16O_p__COmet.def'
+2026-07-07 18:13:21,014 - INFO - context: wrote '/home/tcorey/Desktop/workspace/def_creator/samples/COmet/12C-16O_p/12C-16O_p__COmet.def'
+2026-07-07 18:13:21,014 - INFO - context: wrote '/home/tcorey/Desktop/workspace/def_creator/samples/COmet/12C-16O_p/12C-16O_p__COmet.def.json', removed temp '/home/tcorey/Desktop/workspace/def_creator/samples/COmet/12C-16O_p/12C-16O_p__COmet__temp.def.json'
+2026-07-07 18:16:39,105 - INFO - create_def: work_dir='/home/tcorey/Desktop/workspace/def_creator/samples/COmet', ds_name='COmet', format='exomol', init=False
+2026-07-07 18:16:39,105 - INFO - context: run_build for '/home/tcorey/Desktop/workspace/def_creator/samples/COmet' (ds_name='COmet')
+2026-07-07 18:16:39,105 - INFO - inp_handler: parsing '/home/tcorey/Desktop/workspace/def_creator/samples/COmet/COmet.inp'
+2026-07-07 18:16:39,106 - INFO - inp_handler: parsed 1 isotopologue(s): ['12C-16O_p']
+2026-07-07 18:16:39,211 - INFO - context: building '12C-16O_p'
+2026-07-07 18:16:39,211 - ERROR - context: temp cache '/home/tcorey/Desktop/workspace/def_creator/samples/COmet/12C-16O_p/12C-16O_p__COmet__temp.def.json' not found. Run with --init first.
+2026-07-07 18:17:20,811 - INFO - create_def: work_dir='/home/tcorey/Desktop/workspace/def_creator/samples/COmet', ds_name='COmet', format='exomol', init=True
+2026-07-07 18:17:20,812 - INFO - context: run_init for '/home/tcorey/Desktop/workspace/def_creator/samples/COmet' (ds_name='COmet', force=False)
+2026-07-07 18:17:20,812 - INFO - validator: checking '12C-16O_p' in '/home/tcorey/Desktop/workspace/def_creator/samples/COmet/12C-16O_p'
+2026-07-07 18:17:20,826 - INFO - validator: '12C-16O_p' passed
+2026-07-07 18:17:20,827 - INFO - context: extracting data for '12C-16O_p'
+2026-07-07 18:17:20,945 - INFO - context: auto-derived SMILES/InChI/InChIKey for '12C-16O_p'
+2026-07-07 18:17:20,945 - INFO - extractor: extract_all for '12C-16O_p' in '/home/tcorey/Desktop/workspace/def_creator/samples/COmet/12C-16O_p'
+2026-07-07 18:17:20,945 - INFO - extractor: extract_iso_info for '12C-16O_p'
+2026-07-07 18:17:21,171 - INFO - extractor: extract_states_info in '/home/tcorey/Desktop/workspace/def_creator/samples/COmet/12C-16O_p'
+2026-07-07 18:17:21,201 - INFO - extractor: 29137 states, max_energy=83810.271943 cm-1
+2026-07-07 18:17:21,202 - INFO - extractor: extract_transitions_info in '/home/tcorey/Desktop/workspace/def_creator/samples/COmet/12C-16O_p'
+2026-07-07 18:17:24,774 - INFO - extractor: 10339562 transitions across 1 file(s), max_wavenumber=81598.417718 cm-1
+2026-07-07 18:17:24,774 - INFO - extractor: extract_pf_info in '/home/tcorey/Desktop/workspace/def_creator/samples/COmet/12C-16O_p'
+2026-07-07 18:17:24,778 - INFO - extractor: pf max_temp=15000.0 K, step=1.0 K
+2026-07-07 18:17:24,779 - INFO - context: wrote temp cache '/home/tcorey/Desktop/workspace/def_creator/samples/COmet/12C-16O_p/12C-16O_p__COmet__temp.def.json'
+2026-07-07 18:17:24,779 - INFO - context: summarising states columns for '12C-16O_p'
+2026-07-07 18:17:24,779 - INFO - extractor: summarise_states_columns in '/home/tcorey/Desktop/workspace/def_creator/samples/COmet/12C-16O_p'
+2026-07-07 18:17:24,994 - WARNING - context: '/home/tcorey/Desktop/workspace/def_creator/samples/COmet/COmet.inp' already exists — skipping (use --force to overwrite)
+2026-07-07 18:17:43,111 - INFO - create_def: work_dir='/home/tcorey/Desktop/workspace/def_creator/samples/COmet', ds_name='COmet', format='exomol', init=False
+2026-07-07 18:17:43,111 - INFO - context: run_build for '/home/tcorey/Desktop/workspace/def_creator/samples/COmet' (ds_name='COmet')
+2026-07-07 18:17:43,111 - INFO - inp_handler: parsing '/home/tcorey/Desktop/workspace/def_creator/samples/COmet/COmet.inp'
+2026-07-07 18:17:43,112 - INFO - inp_handler: parsed 1 isotopologue(s): ['12C-16O_p']
+2026-07-07 18:17:43,231 - INFO - context: building '12C-16O_p'
+2026-07-07 18:17:43,231 - INFO - merger: '12C-16O_p' all required fields present
+2026-07-07 18:17:43,232 - INFO - renderer: ExoMolRenderer writing '/home/tcorey/Desktop/workspace/def_creator/samples/COmet/12C-16O_p/12C-16O_p__COmet.def'
+2026-07-07 18:17:43,233 - INFO - renderer: wrote 59 lines to '/home/tcorey/Desktop/workspace/def_creator/samples/COmet/12C-16O_p/12C-16O_p__COmet.def'
+2026-07-07 18:17:43,233 - INFO - context: wrote '/home/tcorey/Desktop/workspace/def_creator/samples/COmet/12C-16O_p/12C-16O_p__COmet.def'
+2026-07-07 18:17:43,234 - INFO - context: wrote '/home/tcorey/Desktop/workspace/def_creator/samples/COmet/12C-16O_p/12C-16O_p__COmet.def.json', removed temp '/home/tcorey/Desktop/workspace/def_creator/samples/COmet/12C-16O_p/12C-16O_p__COmet__temp.def.json'
+2026-07-07 18:18:45,052 - INFO - create_def: work_dir='/home/tcorey/Desktop/workspace/def_creator/samples/COmet', ds_name='COmet', format='exomol', init=True
+2026-07-07 18:18:45,053 - INFO - context: run_init for '/home/tcorey/Desktop/workspace/def_creator/samples/COmet' (ds_name='COmet', force=False)
+2026-07-07 18:18:45,053 - INFO - validator: checking '12C-16O_p' in '/home/tcorey/Desktop/workspace/def_creator/samples/COmet/12C-16O_p'
+2026-07-07 18:18:45,068 - INFO - validator: '12C-16O_p' passed
+2026-07-07 18:18:45,068 - INFO - context: extracting data for '12C-16O_p'
+2026-07-07 18:18:45,187 - INFO - context: auto-derived SMILES/InChI/InChIKey for '12C-16O_p'
+2026-07-07 18:18:45,187 - INFO - extractor: extract_all for '12C-16O_p' in '/home/tcorey/Desktop/workspace/def_creator/samples/COmet/12C-16O_p'
+2026-07-07 18:18:45,187 - INFO - extractor: extract_iso_info for '12C-16O_p'
+2026-07-07 18:18:45,401 - INFO - extractor: extract_states_info in '/home/tcorey/Desktop/workspace/def_creator/samples/COmet/12C-16O_p'
+2026-07-07 18:18:45,430 - INFO - extractor: 29137 states, max_energy=83810.271943 cm-1
+2026-07-07 18:18:45,431 - INFO - extractor: extract_transitions_info in '/home/tcorey/Desktop/workspace/def_creator/samples/COmet/12C-16O_p'
+2026-07-07 18:18:48,980 - INFO - extractor: 10339562 transitions across 1 file(s), max_wavenumber=81598.417718 cm-1
+2026-07-07 18:18:48,980 - INFO - extractor: extract_pf_info in '/home/tcorey/Desktop/workspace/def_creator/samples/COmet/12C-16O_p'
+2026-07-07 18:18:48,985 - INFO - extractor: pf max_temp=15000.0 K, step=1.0 K
+2026-07-07 18:18:48,985 - INFO - context: wrote temp cache '/home/tcorey/Desktop/workspace/def_creator/samples/COmet/12C-16O_p/12C-16O_p__COmet__temp.def.json'
+2026-07-07 18:18:48,986 - INFO - context: summarising states columns for '12C-16O_p'
+2026-07-07 18:18:48,986 - INFO - extractor: summarise_states_columns in '/home/tcorey/Desktop/workspace/def_creator/samples/COmet/12C-16O_p'
+2026-07-07 18:18:49,202 - WARNING - context: '/home/tcorey/Desktop/workspace/def_creator/samples/COmet/COmet.inp' already exists — skipping (use --force to overwrite)
+2026-07-07 18:19:00,774 - INFO - create_def: work_dir='/home/tcorey/Desktop/workspace/def_creator/samples/COmet', ds_name='COmet', format='exomol', init=False
+2026-07-07 18:19:00,775 - INFO - context: run_build for '/home/tcorey/Desktop/workspace/def_creator/samples/COmet' (ds_name='COmet')
+2026-07-07 18:19:00,775 - INFO - inp_handler: parsing '/home/tcorey/Desktop/workspace/def_creator/samples/COmet/COmet.inp'
+2026-07-07 18:19:00,776 - INFO - inp_handler: parsed 1 isotopologue(s): ['12C-16O_p']
