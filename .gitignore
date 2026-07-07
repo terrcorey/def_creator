@@ -18,5 +18,9 @@ venv/
 !samples/**/ref/*.def
 !samples/**/ref/*.def.json
 
+# Large data files
+*.states
+*.trans
+
 # Scratch
 scratchpad.ipynb

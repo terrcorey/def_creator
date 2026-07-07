@@ -241,7 +241,7 @@ def extract_pf_info(iso_dir: Path) -> dict:
 def summarise_states_columns(iso_dir: Path) -> dict:
     """
     Reads the full .states file and returns:
-      - 'first_rows': list of the first 5 rows (each row is a list of string tokens)
+      - 'first_rows': aligned string table of the first 5 rows (from df.to_string)
       - 'columns': list of per-column summaries
           For numeric columns: {col, type ('integer'/'float'), min, max}
           For string columns:  {col, type 'string', values (up to 3), more (bool)}
@@ -255,8 +255,8 @@ def summarise_states_columns(iso_dir: Path) -> dict:
         path = _open_maybe_bz2(states_files[0], tmpdir)
         df = pd.read_csv(path, sep=r"\s+", header=None, dtype=str, low_memory=False)
 
-    # First 5 rows as lists of string tokens
-    first_rows = df.head(5).values.tolist()
+    # First 5 rows as an aligned string table (no index, no header)
+    first_rows = df.head(5).to_string(index=False, header=False)
 
     columns = []
     for col_idx in range(len(df.columns)):

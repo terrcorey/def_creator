@@ -14,7 +14,6 @@ _REQUIRED_PATHS = [
     ("atoms", "number_of_atoms"),
     ("irreducible_representations",),
     ("dataset", "name"),
-    ("dataset", "doi"),
     ("dataset", "max_temperature"),
     ("dataset", "cooling_function_available"),
     ("dataset", "specific_heat_available"),

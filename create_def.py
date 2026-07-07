@@ -8,6 +8,7 @@ from context import DefContext
 
 
 def main() -> None:
+    # argparse setup
     parser = argparse.ArgumentParser(
         description="Generate ExoMol .def files from spectroscopy data files.",
         formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -24,6 +25,11 @@ def main() -> None:
     parser.add_argument("work_dir", type=Path, help="Path to the dataset directory")
     parser.add_argument("--init", action="store_true", help="Run initialisation step")
     parser.add_argument(
+        "--verbose-input", dest="verbose_input",
+        action=argparse.BooleanOptionalAction, default=True,
+        help="Include comments in the generated .inp file (default: true)",
+    )
+    parser.add_argument(
         "--format", default="exomol", dest="format_name",
         help="Output template format (default: exomol)",
     )
@@ -34,6 +40,7 @@ def main() -> None:
     )
     args = parser.parse_args()
 
+    #logging setup
     logging.basicConfig(
         level=getattr(logging, args.log_level),
         format="%(asctime)s - %(levelname)s - %(message)s",
@@ -49,8 +56,9 @@ def main() -> None:
         f"format='{args.format_name}', init={args.init}"
     )
 
+    #call context.py for logic, add more if else blocks for other templates
     if args.init:
-        context.run_init(ctx, format_name=args.format_name)
+        context.run_init(ctx, format_name=args.format_name, verbose_input=args.verbose_input)
     else:
         context.run_build(ctx, format_name=args.format_name)
 

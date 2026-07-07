@@ -45,7 +45,7 @@ class DefContext:
         return self.work_dir / iso_slug / f"{iso_slug}__{self.ds_name}.def"
 
 
-def run_init(ctx: DefContext, format_name: str = "exomol") -> None:
+def run_init(ctx: DefContext, format_name: str = "exomol", verbose_input: bool = True) -> None:
     """
     --init workflow:
       1. Validate work directory and all isotopologue directories
@@ -96,6 +96,7 @@ def run_init(ctx: DefContext, format_name: str = "exomol") -> None:
         iso_slugs=iso_slugs,
         states_summaries=states_summaries,
         extracted_data=extracted,
+        verbose=verbose_input,
     )
     inp_path = ctx.inp_path()
     if inp_path.exists():
@@ -144,6 +145,21 @@ def run_build(ctx: DefContext, format_name: str = "exomol") -> None:
     parsed = inp_handler.parse_inp(inp_path)
     dataset_user = parsed["dataset"]
     per_iso_user = parsed["per_isotopologue"]
+
+    # Step 2b: validate .inp content (collect all errors before proceeding)
+    known_iso_slugs = [slug for slug, _ in ctx.isotopologue_dirs()]
+    inp_errors = inp_handler.validate_inp(inp_path, known_iso_slugs)
+    if inp_errors:
+        count = len(inp_errors)
+        print(f"\nErrors in {inp_path.name} — {count} problem(s) found:\n")
+        for i, err in enumerate(inp_errors, 1):
+            lines = err.split("\n")
+            print(f"  {i}. {lines[0]}")
+            for line in lines[1:]:
+                print(f"     {line}")
+            print()
+        print("Fix the above and re-run.")
+        sys.exit(1)
 
     # Step 3–5: merge, validate, render per isotopologue
     rend = renderer.get_renderer(format_name)

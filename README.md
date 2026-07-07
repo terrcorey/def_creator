@@ -4,7 +4,7 @@ Generates ExoMol `.def` and `.def.json` definition files from a molecular line l
 
 ## Quick start
 
-```python
+```bash
 # Step 1 — inspect data and create the input file
 python create_def.py --init /path/to/<dataset_name>/
 
@@ -13,6 +13,19 @@ python create_def.py --init /path/to/<dataset_name>/
 # Step 3 — generate the .def files
 python create_def.py /path/to/<dataset_name>/
 ```
+
+## CLI reference
+
+```
+python create_def.py [--init] [--no-verbose-input] [--format FORMAT] [--log-level LEVEL] <work_dir>
+```
+
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--init` | off | Run initialisation step (extract data, generate `.inp`) |
+| `--no-verbose-input` | verbose | Omit explanatory comments from the generated `.inp`; states preview is always retained |
+| `--format FORMAT` | `exomol` | Output template format |
+| `--log-level LEVEL` | `INFO` | Logging verbosity: `DEBUG`, `INFO`, `WARNING`, `ERROR` |
 
 ## Working directory structure
 
@@ -80,7 +93,7 @@ All files in a set must have the same column format (3-column or 4-column). The 
 | `cas_registry_number`         | CAS number (optional)                                                                 |
 | `point_group`                 | Symmetry group (e.g. `C`, `Cs`, `C2v`, `Dinfh`)                                       |
 | `irreps`                      | Irreducible representations as `label:degeneracy` pairs, e.g. `Sigma+:12, Sigma-:12`  |
-| `quantum_case_label`          | Quantum coupling case (e.g. `dos`, `dcs`, `hunda`, `hundb`, `lpcs`)                   |
+| `quantum_case_label`          | Quantum coupling case — one of: `dcs`, `dos`, `lpcs`, `lpos`, `asymcs`, `asymos`, `stos`, `stcs`, `sphcs`, `sphos` |
 
 **`[quantum_labels.<iso_slug>]`** — one per isotopologue (or one shared `[quantum_labels]` if `shared_quantum_labels = true`)
 
@@ -107,10 +120,10 @@ Flags auto-detected from label names:
 | `gfactor`                         | `lande_g_available = true`        |
 | namespace prefix (e.g. `hunda:`)  | counts toward `num_quantum_types` |
 
-Auxiliary columns go at the end with the `Auxiliary:` prefix and always require explicit format and description:
+Auxiliary columns go at the end with the `Auxiliary:` prefix. Standard Auxiliary labels (`SourceType`, `Ecal`) auto-fill formats and descriptions from the library. Unknown Auxiliary labels need explicit format and description:
 
 ```
-Auxiliary:SourceType = A2 %2s | Ca=Calculated,Ma=MARVEL,...
+Auxiliary:MyCustomField = A2 %2s | Description here
 ```
 
 ## Auto-derived fields
