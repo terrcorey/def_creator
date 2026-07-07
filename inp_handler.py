@@ -207,20 +207,42 @@ def generate_blank_inp(
             out.append(section_separator)
             out.append("")
 
+        pre_smiles = ""
+        pre_inchi = ""
+        pre_inchikey = ""
+        if extracted_data and iso_slug in extracted_data:
+            iso_d = extracted_data[iso_slug].get("isotopologue", {})
+            pre_smiles = iso_d.get("smiles") or ""
+            pre_inchi = iso_d.get("inchi") or ""
+            pre_inchikey = iso_d.get("inchikey") or ""
+
         out.append(f"[isotopologue.{iso_slug}]")
         if verbose:
+            if pre_smiles:
+                out += [
+                    "# smiles              Isotopologue SMILES — auto-derived; verify and correct if needed",
+                    "#                     Leave blank to skip SMILES and provide inchi/inchikey directly instead",
+                    "# inchi/inchikey      Auto-derived from smiles; or fill manually (leave smiles blank)",
+                    "#                     Providing only inchi and leaving inchikey blank will auto-derive inchikey",
+                ]
+            else:
+                out += [
+                    "# smiles              Isotopologue SMILES — could not auto-derive (repeated non-H elements)",
+                    "#                     Provide SMILES, OR leave blank and fill inchi/inchikey directly",
+                    "# inchi               InChI identifier (e.g. InChI=1S/O2/i1+0,2+0)",
+                    "# inchikey            InChIKey (e.g. MYMOFIZGZYHOMD-UHFFFAOYSA-N) — derived from inchi if left blank",
+                ]
             out += [
-                "# inchi               InChI identifier for the isotopologue (e.g. InChI=1S/Al.H/i2*1+0)",
-                "# inchikey            InChIKey for the isotopologue (e.g. SPRIOUNJHPCKPV-MHGBRSHDSA-N)",
-                "# cas_registry_number CAS registry number (leave blank if not applicable)",
+                "# cas_registry_number CAS registry number (leave blank if not applicable) Lookup: https://commonchemistry.cas.org",
                 "# point_group         Symmetry group (e.g. C, Cs, C2v, Dinfh, ...)",
                 "# irreps              Irreducible representations as label:degeneracy pairs (e.g. Sigma+:12, Sigma-:12)",
-                "# quantum_case_label  Quantum coupling case label (e.g. dos, dcs, lpcs, asymcs, sphcs, ...)",
+                "# quantum_case_label  Quantum coupling case label (e.g. dos, dcs, lpcs...) Lookup: https://www.exomol.com/data/quantum-cases/",
                 input_separator,
             ]
         out += _align_section([
-            ("inchi",               ""),
-            ("inchikey",            ""),
+            ("smiles",             pre_smiles),
+            ("inchi",               pre_inchi),
+            ("inchikey",            pre_inchikey),
             ("cas_registry_number", ""),
             ("point_group",         ""),
             ("irreps",              ""),
@@ -506,6 +528,8 @@ def parse_inp(inp_path: Path) -> dict:
         kv = _kv_pairs(section_lines)
         iso_out: dict = {}
 
+        if "smiles" in kv and kv["smiles"].strip():
+            iso_out["smiles"] = kv["smiles"].strip()
         if "inchi" in kv and kv["inchi"].strip():
             iso_out["inchi"] = kv["inchi"].strip()
         if "inchikey" in kv and kv["inchikey"].strip():
@@ -562,13 +586,14 @@ def parse_inp(inp_path: Path) -> dict:
 # .inp validation
 # ---------------------------------------------------------------------------
 
-def validate_inp(inp_path: Path, known_iso_slugs: list[str]) -> list[str]:
+def validate_inp(inp_path: Path, known_iso_slugs: list[str]) -> tuple[list[str], list[str]]:
     """
     Validates a filled .inp file for completeness and correctness.
-    Collects ALL errors in one pass so the user can fix them all at once.
-    Returns a list of human-readable error strings; empty = valid.
+    Collects ALL errors and soft warnings in one pass.
+    Returns (errors, warnings); errors block the build, warnings are informational only.
     """
     errors: list[str] = []
+    warnings: list[str] = []
     standard_labels = _get_standard_labels()
     sections = _read_sections(inp_path)
 
@@ -715,6 +740,18 @@ def validate_inp(inp_path: Path, known_iso_slugs: list[str]) -> list[str]:
                         f"    e.g.:  irreps = Sigma+:12, Sigma-:12"
                     )
 
+            smiles_val = iso_kv.get("smiles", "").strip()
+            if smiles_val:
+                import inchi as _inchi_mod
+                _inchi_result = _inchi_mod.inchi_from_smiles(smiles_val, iso_slug=iso_slug)
+                if _inchi_result is None:
+                    errors.append(
+                        f"[isotopologue.{iso_slug}] smiles = \"{smiles_val}\" is invalid — RDKit could not generate InChI/InChIKey.\n"
+                        f"  → Correct the SMILES, then also clear or update:\n"
+                        f"      inchi    = (re-derived automatically if left blank)\n"
+                        f"      inchikey = (re-derived automatically if left blank)"
+                    )
+
             inchikey_val = iso_kv.get("inchikey", "").strip()
             if inchikey_val:
                 import re as _re
@@ -809,6 +846,19 @@ def validate_inp(inp_path: Path, known_iso_slugs: list[str]) -> list[str]:
                                 f"  →   {name} = I5 %5d | Description here"
                             )
 
+                # Soft warning: no namespaced quantum number types detected
+                flags = _auto_detect_flags(labels)
+                if flags["num_quantum_types"] == 0:
+                    warnings.append(
+                        f"[{qn_section}] No quantum number type namespaces detected (num_quantum_types = 0).\n"
+                        f"  This is valid if all labels are generally well-defined, but if your labels belong to a coupling\n"
+                        f"  scheme (e.g. Hund's case a), prefix them with the case name:\n"
+                        f"    hunda:Lambda\n"
+                        f"    hunda:Sigma\n"
+                        f"  If num_quantum_types = 0 is intentional, you can ignore this and continue building."
+                        f"  For more information on quantum number types, read the documentation at https://www.exomol.com/data/quantum-cases/"
+                    )
+
         # Only validate shared quantum_labels once (for the first iso_slug)
         if shared_qn:
             break
@@ -825,4 +875,4 @@ def validate_inp(inp_path: Path, known_iso_slugs: list[str]) -> list[str]:
                     f"  → Check for typos — isotopologue directories found: {', '.join(known_iso_slugs) or 'none'}"
                 )
 
-    return errors
+    return errors, warnings

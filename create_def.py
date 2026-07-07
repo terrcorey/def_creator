@@ -25,6 +25,10 @@ def main() -> None:
     parser.add_argument("work_dir", type=Path, help="Path to the dataset directory")
     parser.add_argument("--init", action="store_true", help="Run initialisation step")
     parser.add_argument(
+        "--force", action="store_true",
+        help="With --init: delete existing .inp and temp cache files before regenerating",
+    )
+    parser.add_argument(
         "--verbose-input", dest="verbose_input",
         action=argparse.BooleanOptionalAction, default=True,
         help="Include comments in the generated .inp file (default: true)",
@@ -58,7 +62,7 @@ def main() -> None:
 
     #call context.py for logic, add more if else blocks for other templates
     if args.init:
-        context.run_init(ctx, format_name=args.format_name, verbose_input=args.verbose_input)
+        context.run_init(ctx, format_name=args.format_name, verbose_input=args.verbose_input, force=args.force)
     else:
         context.run_build(ctx, format_name=args.format_name)
 

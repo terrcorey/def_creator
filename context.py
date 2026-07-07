@@ -9,6 +9,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 import extractor
+import inchi as inchi_mod
 import inp_handler
 import merger
 import renderer
@@ -45,7 +46,7 @@ class DefContext:
         return self.work_dir / iso_slug / f"{iso_slug}__{self.ds_name}.def"
 
 
-def run_init(ctx: DefContext, format_name: str = "exomol", verbose_input: bool = True) -> None:
+def run_init(ctx: DefContext, format_name: str = "exomol", verbose_input: bool = True, force: bool = False) -> None:
     """
     --init workflow:
       1. Validate work directory and all isotopologue directories
@@ -54,7 +55,21 @@ def run_init(ctx: DefContext, format_name: str = "exomol", verbose_input: bool =
       4. Summarise .states columns for each isotopologue
       5. Generate and write the blank .inp template
     """
-    logging.info(f"context: run_init for '{ctx.work_dir}' (ds_name='{ctx.ds_name}')")
+    logging.info(f"context: run_init for '{ctx.work_dir}' (ds_name='{ctx.ds_name}', force={force})")
+
+    # If --force, remove existing .inp and temp caches before regenerating
+    if force:
+        inp_path = ctx.inp_path()
+        if inp_path.exists():
+            inp_path.unlink()
+            logging.info(f"context: --force: removed '{inp_path}'")
+            print(f"  Removed existing: {inp_path}")
+        for iso_slug, _ in ctx.isotopologue_dirs():
+            temp_path = ctx.def_json_temp_path(iso_slug)
+            if temp_path.exists():
+                temp_path.unlink()
+                logging.info(f"context: --force: removed '{temp_path}'")
+                print(f"  Removed existing: {temp_path}")
 
     # Step 1: validate
     try:
@@ -76,7 +91,23 @@ def run_init(ctx: DefContext, format_name: str = "exomol", verbose_input: bool =
 
     for iso_slug, iso_dir in ctx.isotopologue_dirs():
         logging.info(f"context: extracting data for '{iso_slug}'")
-        data = extractor.extract_all(iso_slug, iso_dir, ctx.ds_name)
+        atoms, charge = extractor.expand_slug_atoms(iso_slug)
+        iso_smiles = inchi_mod.smiles_from_atoms(atoms, charge)
+        iso_inchi: str | None = None
+        iso_inchikey: str | None = None
+        if iso_smiles is not None:
+            result = inchi_mod.inchi_from_smiles(iso_smiles, iso_slug=iso_slug)
+            if result:
+                iso_inchi, iso_inchikey = result
+                logging.info(f"context: auto-derived SMILES/InChI/InChIKey for '{iso_slug}'")
+            else:
+                logging.info(f"context: SMILES generated for '{iso_slug}' but InChI derivation failed — user should verify")
+        else:
+            logging.info(f"context: cannot auto-generate SMILES for '{iso_slug}' (repeated non-H elements) — user must supply")
+        data = extractor.extract_all(
+            iso_slug, iso_dir, ctx.ds_name,
+            smiles=iso_smiles, inchi=iso_inchi, inchikey=iso_inchikey,
+        )
         extracted[iso_slug] = data
 
         temp_path = ctx.def_json_temp_path(iso_slug)
@@ -100,11 +131,8 @@ def run_init(ctx: DefContext, format_name: str = "exomol", verbose_input: bool =
     )
     inp_path = ctx.inp_path()
     if inp_path.exists():
-        logging.warning(
-            f"context: '{inp_path}' already exists — not overwriting. "
-            f"Delete it manually to regenerate."
-        )
-        print(f"\n  (Skipped writing '{inp_path}' — file already exists.)")
+        logging.warning(f"context: '{inp_path}' already exists — skipping (use --force to overwrite)")
+        print(f"\n  (Skipped writing '{inp_path}' — already exists; use --init --force to overwrite.)")
     else:
         inp_handler.write_inp(content, inp_path)
 
@@ -148,7 +176,21 @@ def run_build(ctx: DefContext, format_name: str = "exomol") -> None:
 
     # Step 2b: validate .inp content (collect all errors before proceeding)
     known_iso_slugs = [slug for slug, _ in ctx.isotopologue_dirs()]
-    inp_errors = inp_handler.validate_inp(inp_path, known_iso_slugs)
+    inp_errors, inp_warnings = inp_handler.validate_inp(inp_path, known_iso_slugs)
+
+    if inp_warnings:
+        print(f"\nNote — {len(inp_warnings)} thing(s) to verify in {inp_path.name}:\n")
+        for i, warn in enumerate(inp_warnings, 1):
+            lines = warn.split("\n")
+            print(f"  {i}. {lines[0]}")
+            for line in lines[1:]:
+                print(f"     {line}")
+            print()
+        answer = input("Continue with build? [y/N] ").strip().lower()
+        if answer != "y":
+            print("Build cancelled.")
+            sys.exit(0)
+
     if inp_errors:
         count = len(inp_errors)
         print(f"\nErrors in {inp_path.name} — {count} problem(s) found:\n")
@@ -182,6 +224,21 @@ def run_build(ctx: DefContext, format_name: str = "exomol") -> None:
         # Build per-isotopologue user dict (merge dataset-level fields in)
         iso_user = dict(dataset_user)
         iso_user.update(per_iso_user.get(iso_slug, {}))
+
+        # Populate inchi/inchikey from whatever the user supplied:
+        #   smiles present, inchi blank  → derive both from smiles
+        #   smiles blank, inchi present, inchikey blank → derive inchikey from inchi
+        #   smiles blank, both inchi and inchikey present → use as-is (no derivation needed)
+        if not iso_user.get("inchi") and iso_user.get("smiles"):
+            result = inchi_mod.inchi_from_smiles(iso_user["smiles"], iso_slug=iso_slug)
+            if result:
+                iso_user["inchi"], iso_user["inchikey"] = result
+                logging.info(f"context: derived InChI/InChIKey from SMILES for '{iso_slug}'")
+        elif iso_user.get("inchi") and not iso_user.get("inchikey"):
+            derived_key = inchi_mod.inchikey_from_inchi(iso_user["inchi"])
+            if derived_key:
+                iso_user["inchikey"] = derived_key
+                logging.info(f"context: derived InChIKey from provided InChI for '{iso_slug}'")
 
         # Merge auto + user
         merged = merger.merge_iso(auto_data, iso_user)

@@ -17,12 +17,13 @@ python create_def.py /path/to/<dataset_name>/
 ## CLI reference
 
 ```
-python create_def.py [--init] [--no-verbose-input] [--format FORMAT] [--log-level LEVEL] <work_dir>
+python create_def.py [--init] [--force] [--no-verbose-input] [--format FORMAT] [--log-level LEVEL] <work_dir>
 ```
 
 | Flag | Default | Description |
 |------|---------|-------------|
 | `--init` | off | Run initialisation step (extract data, generate `.inp`) |
+| `--force` | off | With `--init`: delete existing `.inp` and temp cache files before regenerating |
 | `--no-verbose-input` | verbose | Omit explanatory comments from the generated `.inp`; states preview is always retained |
 | `--format FORMAT` | `exomol` | Output template format |
 | `--log-level LEVEL` | `INFO` | Logging verbosity: `DEBUG`, `INFO`, `WARNING`, `ERROR` |
@@ -88,12 +89,23 @@ All files in a set must have the same column format (3-column or 4-column). The 
 
 | Key                           | Description                                                                           |
 |-------------------------------|---------------------------------------------------------------------------------------|
-| `inchi`                       | InChI identifier for the isotopologue (e.g. `InChI=1S/Al.H/i2*1+0`)                   |
-| `inchikey`                    | InChIKey for the isotopologue (e.g. `SPRIOUNJHPCKPV-MHGBRSHDSA-N`)                    |
+| `smiles`                      | Isotopologue SMILES — auto-filled where possible (see below); used to derive InChI/InChIKey |
+| `inchi`                       | InChI identifier — auto-derived from `smiles`; or fill manually and leave `smiles` blank |
+| `inchikey`                    | InChIKey — auto-derived from `smiles` or `inchi`; or fill manually                   |
 | `cas_registry_number`         | CAS number (optional)                                                                 |
 | `point_group`                 | Symmetry group (e.g. `C`, `Cs`, `C2v`, `Dinfh`)                                       |
 | `irreps`                      | Irreducible representations as `label:degeneracy` pairs, e.g. `Sigma+:12, Sigma-:12`  |
 | `quantum_case_label`          | Quantum coupling case — one of: `dcs`, `dos`, `lpcs`, `lpos`, `asymcs`, `asymos`, `stos`, `stcs`, `sphcs`, `sphos` |
+
+**SMILES and InChI/InChIKey** are always written to the `.inp` for the user to verify. Three workflows are supported:
+
+| `smiles` | `inchi` | `inchikey` | Result at build time |
+|----------|---------|------------|----------------------|
+| filled | blank | blank | InChI and InChIKey derived from SMILES |
+| blank | filled | blank | InChIKey derived from InChI |
+| blank | filled | filled | Used as-is |
+
+SMILES is auto-generated for **diatomics** and **molecules where all elements are distinct** (chain notation `[massSymbol]...`). For molecules with any repeated non-H element (e.g. SO₂, CO₂), the field is left blank and must be filled or InChI/InChIKey provided directly.
 
 **`[quantum_labels.<iso_slug>]`** — one per isotopologue (or one shared `[quantum_labels]` if `shared_quantum_labels = true`)
 
@@ -136,6 +148,7 @@ The following are computed automatically and do not need to be specified in the 
 - Partition function maximum temperature and step size — from the `.pf` file
 - Version date — today's date
 - Boolean availability flags — from quantum label names (see above)
+- SMILES, InChI, InChIKey — from isotopologue formula via RDKit (where possible; see table above)
 
 ## Output encoding
 

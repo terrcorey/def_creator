@@ -285,10 +285,37 @@ def summarise_states_columns(iso_dir: Path) -> dict:
     return {"first_rows": first_rows, "columns": columns}
 
 
-def extract_all(iso_slug: str, iso_dir: Path, ds_name: str) -> dict:
+def slug_to_hill_formula_and_charge(iso_slug: str) -> tuple[str, int]:
+    """
+    Returns the plain Hill formula and ionic charge for the molecule described by iso_slug.
+    Hill order: C first (if present), H second, then alphabetical; no C → all alphabetical.
+    e.g. '27Al-1H' → ('AlH', 0),  '12C-16O2' → ('CO2', 0)
+    Used by context.py to call inchi.fetch_base_inchi once per dataset.
+    """
+    from collections import Counter
+
+    atoms, charge = expand_slug_atoms(iso_slug)
+    counts = Counter(sym for _, sym in atoms)
+    if "C" in counts:
+        order = ["C"] + (["H"] if "H" in counts else []) + sorted(k for k in counts if k not in ("C", "H"))
+    else:
+        order = sorted(counts.keys())
+    formula = "".join(f"{sym}{counts[sym] if counts[sym] > 1 else ''}" for sym in order)
+    return formula, charge
+
+
+def extract_all(
+    iso_slug: str,
+    iso_dir: Path,
+    ds_name: str,
+    smiles: str | None = None,
+    inchi: str | None = None,
+    inchikey: str | None = None,
+) -> dict:
     """
     Assembles a full exomol.json-shaped dict with all auto-derivable fields populated.
     User-supplied fields are set to None.
+    Pass pre-computed smiles/inchi/inchikey from context.py (generated via inchi.py).
     """
     logging.info(f"extractor: extract_all for '{iso_slug}' in '{iso_dir}'")
     iso_info = extract_iso_info(iso_slug)
@@ -300,8 +327,9 @@ def extract_all(iso_slug: str, iso_dir: Path, ds_name: str) -> dict:
         "isotopologue": {
             "iso_formula": iso_info["iso_formula"],
             "iso_slug": iso_slug,
-            "inchi": None,
-            "inchikey": None,
+            "smiles": smiles,
+            "inchi": inchi,
+            "inchikey": inchikey,
             "cas_registry_number": None,
             "mass_in_Da": iso_info["mass_in_Da"],
             "point_group": None,
