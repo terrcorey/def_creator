@@ -76,6 +76,36 @@ def expand_slug_atoms(iso_slug: str) -> tuple[list[tuple[int, str]], int]:
     return expanded, charge
 
 
+def nuclear_spin_degeneracy(iso_slug: str) -> tuple[int, bool] | None:
+    """
+    Returns (g_ns, has_equivalent_nuclei) where:
+      g_ns = Π(2Iᵢ + 1) over all atoms in the slug (using mendeleev nuclear spins)
+      has_equivalent_nuclei = True if any two atoms share the same isotope
+
+    Returns None if any nuclear spin value is unavailable in mendeleev.
+    """
+    atoms, _ = expand_slug_atoms(iso_slug)
+    g_ns = 1
+    isotope_counts: dict[tuple[int, str], int] = {}
+    for mass_num, symbol in atoms:
+        iso = md_isotope(symbol, mass_num)
+        spin = iso.spin
+        if spin is None:
+            logging.warning(f"extractor: nuclear spin unknown for {mass_num}{symbol} — g_ns check skipped")
+            return None
+        # mendeleev returns spin as a fraction string (e.g. "5/2") or a number
+        if isinstance(spin, str) and "/" in spin:
+            num, den = spin.split("/")
+            spin_val = float(num) / float(den)
+        else:
+            spin_val = float(spin)
+        g_ns *= int(round(2 * spin_val + 1))
+        key = (mass_num, symbol)
+        isotope_counts[key] = isotope_counts.get(key, 0) + 1
+    has_equiv = any(v > 1 for v in isotope_counts.values())
+    return g_ns, has_equiv
+
+
 def extract_iso_info(iso_slug: str) -> dict:
     """Derives isotopologue identity and mass fields from the iso_slug (no file I/O)."""
     logging.info(f"extractor: extract_iso_info for '{iso_slug}'")
@@ -263,9 +293,14 @@ def summarise_states_columns(iso_dir: Path) -> dict:
         col = df.iloc[:, col_idx].dropna()
         numeric = pd.to_numeric(col, errors="coerce")
         if numeric.notna().all():
-            # Determine integer vs float by checking for decimal points or scientific notation
             has_decimal = col.str.contains(r"[.eE]", regex=True, na=False).any()
-            col_type = "float" if bool(has_decimal) else "integer"
+            if not has_decimal:
+                col_type = "integer"
+            else:
+                # Half-integer: all values are multiples of 0.5 (i.e. 2*val is a whole number)
+                doubled = numeric * 2
+                is_half_int = bool((doubled.round() == doubled).all() and (numeric % 1 != 0).any())
+                col_type = "half-integer" if is_half_int else "float"
             columns.append({
                 "col": col_idx + 1,
                 "type": col_type,
@@ -304,18 +339,10 @@ def slug_to_hill_formula_and_charge(iso_slug: str) -> tuple[str, int]:
     return formula, charge
 
 
-def extract_all(
-    iso_slug: str,
-    iso_dir: Path,
-    ds_name: str,
-    smiles: str | None = None,
-    inchi: str | None = None,
-    inchikey: str | None = None,
-) -> dict:
+def extract_all(iso_slug: str, iso_dir: Path, ds_name: str) -> dict:
     """
     Assembles a full exomol.json-shaped dict with all auto-derivable fields populated.
-    User-supplied fields are set to None.
-    Pass pre-computed smiles/inchi/inchikey from context.py (generated via inchi.py).
+    User-supplied fields (including inchi/inchikey) are set to None and filled at build time.
     """
     logging.info(f"extractor: extract_all for '{iso_slug}' in '{iso_dir}'")
     iso_info = extract_iso_info(iso_slug)
@@ -327,9 +354,8 @@ def extract_all(
         "isotopologue": {
             "iso_formula": iso_info["iso_formula"],
             "iso_slug": iso_slug,
-            "smiles": smiles,
-            "inchi": inchi,
-            "inchikey": inchikey,
+            "inchi": None,
+            "inchikey": None,
             "cas_registry_number": None,
             "mass_in_Da": iso_info["mass_in_Da"],
             "point_group": None,

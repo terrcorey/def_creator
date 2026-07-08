@@ -1,0 +1,167 @@
+[
+    {
+        "Quantum label": "unc",
+        "Format quantum label": "F12.6 %12.6f",
+        "Description quantum label": "Energy uncertainty in cm-1"
+    },
+    {
+        "Quantum label": "tau",
+        "Format quantum label": "ES12.4 %12.4e",
+        "Description quantum label": "Lifetime in s"
+    },
+    {
+        "Quantum label": "gfactor",
+        "Format quantum label": "F10.6 %10.6f",
+        "Description quantum label": "Landé g-factor"
+    },
+    {
+        "Quantum label": "+/-",
+        "Format quantum label": "A1 %1s",
+        "Description quantum label": "Total parity: '+' or '-'"
+    },
+    {
+        "Quantum label": "e/f",
+        "Format quantum label": "A1 %1s",
+        "Description quantum label": "Rotationless-parity"
+    },
+    {
+        "Quantum label": "ElecState",
+        "Format quantum label": "A12 %12s",
+        "Description quantum label": "Electronic state"
+    },
+    {
+        "Quantum label": "v",
+        "Format quantum label": "I3 %3d",
+        "Description quantum label": "State vibrational quantum number"
+    },
+    {
+        "Quantum label": "Lambda",
+        "Format quantum label": "I5 %5d",
+        "Description quantum label": "Projection of electronic angular momentum"
+    },
+    {
+        "Quantum label": "Sigma",
+        "Format quantum label": "I5 %5d",
+        "Description quantum label": "Projection of the electronic spin"
+    },
+    {
+        "Quantum label": "Omega",
+        "Format quantum label": "I5 %5d",
+        "Description quantum label": "Omega = Lambda + Sigma, projection of total angular momentum"
+    },
+    {
+        "Quantum label": "Gtot",
+        "Format quantum label": "A3 %3s",
+        "Description quantum label": "Total symmetry"
+    },
+    {
+        "Quantum label": "Gvib",
+        "Format quantum label": "A3 %3s",
+        "Description quantum label": "Vibrational symmetry"
+    },
+    {
+        "Quantum label": "Grot",
+        "Format quantum label": "A3 %3s",
+        "Description quantum label": "Rotational symmetry"
+    },
+    {
+        "Quantum label": "Coef",
+        "Format quantum label": "F5.2 %5.2f",
+        "Description quantum label": "Coefficient with the largest contribution"
+    },
+    {
+        "Quantum label": "K",
+        "Format quantum label": "I3 %3d",
+        "Description quantum label": "Projection of J onto axis of molecular symmetry"
+    },
+    {
+        "Quantum label": "Ka",
+        "Format quantum label": "I2 %2d",
+        "Description quantum label": "Ka rotational quantum number"
+    },
+    {
+        "Quantum label": "Kc",
+        "Format quantum label": "I2 %2d",
+        "Description quantum label": "Kc rotational quantum number"
+    },
+    {
+        "Quantum label": "rotpar",
+        "Format quantum label": "A3 %3s",
+        "Description quantum label": "Rotational parity"
+    },
+    {
+        "Quantum label": "ivib",
+        "Format quantum label": "I2 %2d",
+        "Description quantum label": "Index in vibrational symmetry block"
+    },
+    {
+        "Quantum label": "irot",
+        "Format quantum label": "I2 %2d",
+        "Description quantum label": "Index in rotational symmetry block"
+    },
+    {
+        "Quantum label": "Fnum",
+        "Format quantum label": "I2 %2d",
+        "Description quantum label": "Fine structure counting number"
+    },
+    {
+        "Quantum label": "P",
+        "Format quantum label": "I2 %2d",
+        "Description quantum label": "Polyad number"
+    },
+    {
+        "Quantum label": "Pnum",
+        "Format quantum label": "I3 %3d",
+        "Description quantum label": "Polyad counting number"
+    },
+    {
+        "Quantum label": "F",
+        "Format quantum label": "I7 %7d",
+        "Description quantum label": "Final angular momentum"
+    },
+    {
+        "Quantum label": "b/qb",
+        "Format quantum label": "A2 %2s",
+        "Description quantum label": "Bound/Quasi-bound"
+    },
+    {
+        "Quantum label": "Grve",
+        "Format quantum label": "A3 %3s",
+        "Description quantum label": "Rovibrational symmetry"
+    },
+    {
+        "Quantum label": "nblock",
+        "Format quantum label": "I5 %5d",
+        "Description quantum label": "Counting number in symmetry block"
+    },
+    {
+        "Quantum label": "Gtor",
+        "Format quantum label": "A3 %3s",
+        "Description quantum label": "Torsional symmetry"
+    },
+    {
+        "Quantum label": "invpar",
+        "Format quantum label": "A1 %1s",
+        "Description quantum label": "Inversional parity"
+    },
+    {
+        "Quantum label": "EnergyID",
+        "Format quantum label": "I5 %5d",
+        "Description quantum label": "Counting number according to state energy"
+    },
+    {
+        "Quantum label": "F_i",
+        "Format quantum label": "A4 %4s",
+        "Description quantum label": "Spin component"
+    },
+    {
+        "Quantum label": "SourceType",
+        "Format quantum label": "A2 %2s",
+        "Description quantum label": "Ma=MARVEL,Ca=Calculated,EH=Effective Hamiltonian,IE=Isotopologue extrapolation"
+    },
+    {
+        "Quantum label": "Ecal",
+        "Format quantum label": "F12.6 %12.6f",
+        "Description quantum label": "Calculated energy in cm-1"
+    }
+]

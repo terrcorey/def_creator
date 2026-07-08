@@ -46,6 +46,61 @@ def _get_standard_labels() -> dict[str, dict]:
 
 
 # ---------------------------------------------------------------------------
+# User-facing comment text — edit here to change .inp instructions
+# ---------------------------------------------------------------------------
+
+_INP_COMMENTS: dict = {
+    "options": {
+        "shared_quantum_labels": "Set to true if all isotopologues share the same quantum label list",
+    },
+    "dataset": {
+        "version_date": "Version date YYYYMMDD (auto-filled to today — edit to override)",
+        "smiles": [
+            "Base molecule SMILES, no isotope mass numbers (e.g. [Al][H] for AlH, C=O for H2CO).",
+            "Auto-derived for diatomics and all-distinct-element molecules — verify topology.",
+            "Leave blank and fill 'inchi' below if you prefer to provide InChI directly.",
+        ],
+        "inchi": [
+            "Base molecule InChI — auto-derived from smiles when smiles is filled.",
+            "Fill manually only if smiles is blank, e.g.: InChI=1S/AlH/h1H",
+        ],
+        "doi": "Publication DOI, e.g.: 10.1093/mnras/stad3802  (leave blank if not yet published)",
+        "max_temperature": "Maximum temperature (K) this line list is valid for (author-stated)",
+        "cooling_function_available": "true if a cooling function file is included",
+        "specific_heat_available": "true if a specific heat file is included",
+        "continuum": "true if photo-absorption continuum cross-sections are included",
+    },
+    "isotopologue": {
+        "cas_registry_number": "CAS number (optional) — lookup: https://commonchemistry.cas.org",
+        "point_group": "Symmetry group (e.g. C, Cs, C2v, Dinfh) — lookup: https://www.exomol.com",
+        "irreps": "Irreducible representations as label:degeneracy pairs (e.g. Sigma+:12, Sigma-:12)",
+        "quantum_case_label": "Quantum coupling case — lookup: https://www.exomol.com/data/quantum-cases/",
+    },
+    "quantum_labels": [
+        "One label per line:  name  or  name = ffmt cfmt | description",
+        "Standard library labels auto-fill format and description.",
+        "First 4 columns are always: ID  E  gtot  J",
+        "  (change J → F for hyperfine datasets; J → N for symmetric tops)",
+        "Auto-detected from label names:",
+        "  4th col = F   → hyperfine_resolved = true",
+        "  unc           → uncertainties_available = true",
+        "  tau           → lifetime_available = true",
+        "  gfactor       → lande_g_available = true",
+        "  namespaces (e.g. hunda:, hundb:) count toward num_quantum_types",
+    ],
+}
+
+
+def _comment_lines(key: str, text: str | list[str], key_width: int) -> list[str]:
+    """Formats '# key<pad> text' with consistent key-column alignment. Handles multi-line."""
+    lines = [text] if isinstance(text, str) else list(text)
+    result = [f"# {key:<{key_width}} {lines[0]}"]
+    for continuation in lines[1:]:
+        result.append(f"# {' ' * key_width} {continuation}")
+    return result
+
+
+# ---------------------------------------------------------------------------
 # .inp generation
 # ---------------------------------------------------------------------------
 
@@ -65,38 +120,36 @@ def _format_col_summary(summary: dict) -> str:
     """Formats a single column summary entry for the states preview comment block."""
     col = summary["col"]
     ctype = summary["type"]
-    if ctype in ("integer", "float"):
+    if ctype in ("integer", "float", "half-integer"):
         mn = summary["min"]
         mx = summary["max"]
         if ctype == "integer":
-            return f"  col {col:>2}  {ctype:<8}  range  {int(mn)} - {int(mx)}"
+            return f"  col {col:>2}  {ctype:<12}  range  {int(mn)} - {int(mx)}"
+        elif ctype == "half-integer":
+            def _fmt_half(v: float) -> str:
+                return str(int(v)) if v == int(v) else f"{v:.1f}"
+            return f"  col {col:>2}  {ctype:<12}  range  {_fmt_half(mn)} - {_fmt_half(mx)}"
         else:
-            return f"  col {col:>2}  {ctype:<8}  range  {mn} - {mx}"
+            return f"  col {col:>2}  {ctype:<12}  range  {mn} - {mx}"
     else:
         vals = ", ".join(f"'{v}'" for v in summary["values"])
         if summary.get("more"):
             vals += ", ..."
-        return f"  col {col:>2}  {ctype:<8}  values {vals}"
+        return f"  col {col:>2}  {ctype:<12}  values {vals}"
 
 
 def _states_preview_block(iso_slug: str, states_summary: dict) -> list[str]:
-    """Builds the commented states file preview block for the .inp file."""
+    """Builds the commented first-rows block for the .inp file. Column summary is shown inline."""
     first_rows = states_summary.get("first_rows", [])
-    columns = states_summary.get("columns", [])
-    if not first_rows and not columns:
-        return [f"# (States file summary not available for {iso_slug})"]
+    if not first_rows:
+        return [f"# (States file first rows not available for {iso_slug})"]
 
     lines = [f"# ---- States file preview ({iso_slug}) " + "-" * 40]
-    if first_rows:
-        lines.append("#  First 5 rows:")
-        lines.append("#")
-        for row_str in first_rows.split("\n"):
-            lines.append("#  " + row_str)
-        lines.append("#")
-    if columns:
-        lines.append("#  Column summary (all rows):")
-        for col_info in columns:
-            lines.append("#" + _format_col_summary(col_info))
+    lines.append("#  First 5 rows:")
+    lines.append("#")
+    for row_str in first_rows.split("\n"):
+        lines.append("#  " + row_str)
+    lines.append("#")
     lines.append("# " + "-" * 76)
     return lines
 
@@ -108,6 +161,8 @@ def generate_blank_inp(
     shared_quantum_labels: bool = False,
     extracted_data: dict[str, dict] | None = None,
     verbose: bool = True,
+    base_smiles: str = "",
+    base_inchi: str = "",
 ) -> str:
     """
     Generates the blank .inp file content for a dataset.
@@ -119,6 +174,8 @@ def generate_blank_inp(
     states_summaries : mapping of iso_slug → result of extractor.summarise_states_columns()
     shared_quantum_labels : if True, generates one [quantum_labels] section for all isotopologues
     extracted_data : mapping of iso_slug → result of extractor.extract_all() for the auto-info header
+    base_smiles : pre-filled base SMILES for the [dataset] section (auto-derived at --init time)
+    base_inchi : pre-filled base InChI for the [dataset] section (auto-derived from base_smiles)
     """
     out = []
     input_separator = "#" + "-" * 30 + "input" + "-" * 30
@@ -137,7 +194,7 @@ def generate_blank_inp(
     # [options]
     out.append("[options]")
     if verbose:
-        out.append("# shared_quantum_labels  Set to true to use the same quantum labels for all isotopologues")
+        out += _comment_lines("shared_quantum_labels", _INP_COMMENTS["options"]["shared_quantum_labels"], 22)
         out.append(input_separator)
     out += _align_section([
         ("shared_quantum_labels", "true" if shared_quantum_labels else "false"),
@@ -154,18 +211,16 @@ def generate_blank_inp(
         ]
     out.append("[dataset]")
     if verbose:
-        out += [
-            "# version_date               Version date in YYYYMMDD format (defaults to today — edit to override)",
-            "# doi                        Publication DOI (e.g. 10.1093/mnras/stad3802)",
-            "#                            Set to None if not yet published — regenerate once a DOI is assigned",
-            "# max_temperature            Maximum temperature of the linelist in K (author-stated, not the .pf max)",
-            "# cooling_function_available true if a cooling function file is provided",
-            "# specific_heat_available    true if a specific heat file is provided",
-            "# continuum                  true if photo-absorption continuum cross-sections are included",
-            input_separator,
-        ]
+        for field, text in _INP_COMMENTS["dataset"].items():
+            out += _comment_lines(field, text, 28)
+        out.append(input_separator)
+    pre_smiles = base_smiles
+    pre_inchi = base_inchi
+
     out += _align_section([
         ("version_date",               date.today().strftime("%Y%m%d")),
+        ("smiles",                     pre_smiles),
+        ("inchi",                      pre_inchi),
         ("doi",                        ""),
         ("max_temperature",            ""),
         ("cooling_function_available", "false"),
@@ -201,48 +256,30 @@ def generate_blank_inp(
                     f"pf_step={pf.get('partition_function_step_size', '?')} K"
                 )
 
+            try:
+                import extractor as _ext
+                nsd = _ext.nuclear_spin_degeneracy(iso_slug)
+                if nsd is not None:
+                    g_ns, has_equiv = nsd
+                    if has_equiv:
+                        auto_parts.append(f"g_ns = {g_ns}  (equivalent nuclei — ortho/para split; irrep degeneracies must be ≤ {g_ns})")
+                    else:
+                        auto_parts.append(f"g_ns = {g_ns}  (no equivalent nuclei — each irrep degeneracy must equal {g_ns})")
+            except Exception:
+                pass
+
             out += [section_separator, f"#  ISOTOPOLOGUE: {iso_slug}"]
             for part in auto_parts:
                 out.append(f"#  Auto-derived: {part}")
             out.append(section_separator)
             out.append("")
 
-        pre_smiles = ""
-        pre_inchi = ""
-        pre_inchikey = ""
-        if extracted_data and iso_slug in extracted_data:
-            iso_d = extracted_data[iso_slug].get("isotopologue", {})
-            pre_smiles = iso_d.get("smiles") or ""
-            pre_inchi = iso_d.get("inchi") or ""
-            pre_inchikey = iso_d.get("inchikey") or ""
-
         out.append(f"[isotopologue.{iso_slug}]")
         if verbose:
-            if pre_smiles:
-                out += [
-                    "# smiles              Isotopologue SMILES — auto-derived; verify and correct if needed",
-                    "#                     Leave blank to skip SMILES and provide inchi/inchikey directly instead",
-                    "# inchi/inchikey      Auto-derived from smiles; or fill manually (leave smiles blank)",
-                    "#                     Providing only inchi and leaving inchikey blank will auto-derive inchikey",
-                ]
-            else:
-                out += [
-                    "# smiles              Isotopologue SMILES — could not auto-derive (repeated non-H elements)",
-                    "#                     Provide SMILES, OR leave blank and fill inchi/inchikey directly",
-                    "# inchi               InChI identifier (e.g. InChI=1S/O2/i1+0,2+0)",
-                    "# inchikey            InChIKey (e.g. MYMOFIZGZYHOMD-UHFFFAOYSA-N) — derived from inchi if left blank",
-                ]
-            out += [
-                "# cas_registry_number CAS registry number (leave blank if not applicable) Lookup: https://commonchemistry.cas.org",
-                "# point_group         Symmetry group (e.g. C, Cs, C2v, Dinfh, ...)",
-                "# irreps              Irreducible representations as label:degeneracy pairs (e.g. Sigma+:12, Sigma-:12)",
-                "# quantum_case_label  Quantum coupling case label (e.g. dos, dcs, lpcs...) Lookup: https://www.exomol.com/data/quantum-cases/",
-                input_separator,
-            ]
+            for field, text in _INP_COMMENTS["isotopologue"].items():
+                out += _comment_lines(field, text, 21)
+            out.append(input_separator)
         out += _align_section([
-            ("smiles",             pre_smiles),
-            ("inchi",               pre_inchi),
-            ("inchikey",            pre_inchikey),
             ("cas_registry_number", ""),
             ("point_group",         ""),
             ("irreps",              ""),
@@ -261,23 +298,20 @@ def generate_blank_inp(
 
             out.append(section)
             if verbose:
-                out += [
-                    "# One label per line: name  or  name = ffmt cfmt | description",
-                    "# Labels in the standard library auto-fill format and description.",
-                    "# First 4 are standard header columns: change J to F for hyperfine datasets,",
-                    "#   or J to N for symmetric tops (no extra flags set for N).",
-                    "# Note: when shared_quantum_labels = true, the first [quantum_labels*] section found is used.",
-                    "#",
-                    "# The following fields are auto-detected from label names:",
-                    "#   4th column = F  → hyperfine_resolved      = true",
-                    "#   unc             → uncertainties_available  = true",
-                    "#   tau             → lifetime_available       = true",
-                    "#   gfactor         → lande_g_available        = true",
-                    "#   unique namespaces (e.g. hunda:) count toward num_quantum_types",
-                    "#",
-                    input_separator,
-                ]
-            out += ["ID", "E", "gtot", "J"]
+                for line in _INP_COMMENTS["quantum_labels"]:
+                    out.append(f"# {line}" if line else "#")
+                out.append("#")
+                out.append(input_separator)
+            _HEADER_LABELS = ["ID", "E", "gtot", "J"]
+            _LABEL_WIDTH = 20
+            columns = summary.get("columns", [])
+            if columns:
+                for i, col_info in enumerate(columns):
+                    label = _HEADER_LABELS[i] if i < len(_HEADER_LABELS) else ""
+                    col_comment = _format_col_summary(col_info).strip()
+                    out.append(f"{label:<{_LABEL_WIDTH}}# {col_comment}")
+            else:
+                out += _HEADER_LABELS
             out.append("")
             out.append("")
 
@@ -374,6 +408,12 @@ def _parse_quantum_label_line(line: str, standard_labels: dict) -> dict | None:
     line = line.strip()
     if not line or line.startswith("#"):
         return None
+
+    # Strip inline comment (e.g. "ID                  # col  1  integer ...")
+    if "#" in line:
+        line = line[:line.index("#")].strip()
+        if not line:
+            return None
 
     if "=" in line:
         name, rest = line.split("=", 1)
@@ -493,6 +533,11 @@ def parse_inp(inp_path: Path) -> dict:
             dataset_out["max_temperature"] = float(dataset_kv["max_temperature"])
         except ValueError:
             pass  # validate_inp will report the invalid value
+    if "smiles" in dataset_kv and dataset_kv["smiles"].strip():
+        dataset_out["smiles"] = dataset_kv["smiles"].strip()
+    if "inchi" in dataset_kv and dataset_kv["inchi"].strip():
+        dataset_out["base_inchi"] = dataset_kv["inchi"].strip()
+
     bool_flags = ("cooling_function_available", "specific_heat_available", "continuum")
     for flag in bool_flags:
         if flag in dataset_kv and dataset_kv[flag]:
@@ -528,12 +573,6 @@ def parse_inp(inp_path: Path) -> dict:
         kv = _kv_pairs(section_lines)
         iso_out: dict = {}
 
-        if "smiles" in kv and kv["smiles"].strip():
-            iso_out["smiles"] = kv["smiles"].strip()
-        if "inchi" in kv and kv["inchi"].strip():
-            iso_out["inchi"] = kv["inchi"].strip()
-        if "inchikey" in kv and kv["inchikey"].strip():
-            iso_out["inchikey"] = kv["inchikey"].strip()
         if "cas_registry_number" in kv and kv["cas_registry_number"].strip():
             iso_out["cas_registry_number"] = kv["cas_registry_number"].strip()
         if "point_group" in kv and kv["point_group"]:
@@ -642,18 +681,11 @@ def validate_inp(inp_path: Path, known_iso_slugs: list[str]) -> tuple[list[str],
                 )
 
         doi_val = dataset_kv.get("doi", "").strip()
-        if not doi_val:
-            errors.append(
-                "[dataset] doi is blank.\n"
-                "  → Enter the publication DOI, e.g.:  doi = 10.1093/mnras/stad3802\n"
-                "  → If not yet published, write:       doi = None\n"
-                "    (regenerate this file once a DOI is assigned)"
-            )
-        elif doi_val.lower() != "none" and not (doi_val.startswith("10.") and "/" in doi_val):
+        if doi_val and doi_val.lower() != "none" and not (doi_val.startswith("10.") and "/" in doi_val):
             errors.append(
                 f"[dataset] doi = \"{doi_val}\" does not look like a valid DOI.\n"
                 f"  → DOIs start with '10.' and contain a '/', e.g.:  doi = 10.1093/mnras/stad3802\n"
-                f"  → If not yet published, write:  doi = None"
+                f"  → Leave blank if not yet published."
             )
 
         mt_val = dataset_kv.get("max_temperature", "").strip()
@@ -692,6 +724,25 @@ def validate_inp(inp_path: Path, known_iso_slugs: list[str]) -> tuple[list[str],
                         f"[dataset] {flag} = \"{val}\" is not valid.\n"
                         f"  → Use true or false."
                     )
+
+    # Dataset-level SMILES / InChI validation
+    smiles_ds = dataset_kv.get("smiles", "").strip()
+    if smiles_ds:
+        import inchi as _inchi_mod
+        _test_mol = None
+        try:
+            from rdkit import Chem as _Chem
+            _test_mol = _Chem.MolFromSmiles(smiles_ds) or _Chem.MolFromSmiles(smiles_ds, sanitize=False)
+        except ImportError:
+            pass  # RDKit absent — skip validation
+        if _test_mol is None and _inchi_mod is not None:
+            errors.append(
+                f"[dataset] smiles = \"{smiles_ds}\" could not be parsed by RDKit.\n"
+                f"  → Verify the SMILES is valid. Common issues:\n"
+                f"    - Radicals need bracket atoms: [Al][H] not AlH\n"
+                f"    - Charges go inside brackets: [NH4+], [O-]\n"
+                f"    - Ring closures require matching digits: C1CCCCC1"
+            )
 
     # ------------------------------------------------------------------
     # Per-isotopologue sections
@@ -733,33 +784,35 @@ def validate_inp(inp_path: Path, known_iso_slugs: list[str]) -> tuple[list[str],
                                 f"[isotopologue.{iso_slug}] irreps '{lbl}' has degeneracy {deg} — must be a non-negative integer.\n"
                                 f"  → e.g.:  irreps = Sigma+:12, Sigma-:12"
                             )
+
+                    # Nuclear spin degeneracy check
+                    try:
+                        import extractor as _ext
+                        nsd = _ext.nuclear_spin_degeneracy(iso_slug)
+                        if nsd is not None:
+                            g_ns, has_equiv = nsd
+                            for lbl, deg in parsed_irreps.items():
+                                if deg > g_ns:
+                                    errors.append(
+                                        f"[isotopologue.{iso_slug}] irreps '{lbl}:{deg}' exceeds g_ns = {g_ns}.\n"
+                                        f"  g_ns = Π(2Iᵢ+1) = {g_ns} is the maximum possible nuclear spin degeneracy for {iso_slug}.\n"
+                                        f"  No individual irrep degeneracy can exceed this."
+                                    )
+                            if not has_equiv:
+                                wrong = [(lbl, deg) for lbl, deg in parsed_irreps.items() if deg != g_ns]
+                                for lbl, deg in wrong:
+                                    errors.append(
+                                        f"[isotopologue.{iso_slug}] irreps '{lbl}:{deg}' — expected {g_ns}.\n"
+                                        f"  {iso_slug} has no equivalent nuclei, so g_ns = Π(2Iᵢ+1) = {g_ns} for every irrep."
+                                    )
+                    except Exception:
+                        pass  # don't let the check block the build if extractor is unavailable
+
                 except ValueError as exc:
                     errors.append(
                         f"[isotopologue.{iso_slug}] irreps = \"{irreps_val}\" could not be parsed: {exc}\n"
                         f"  → Use colon-separated label:degeneracy pairs,\n"
                         f"    e.g.:  irreps = Sigma+:12, Sigma-:12"
-                    )
-
-            smiles_val = iso_kv.get("smiles", "").strip()
-            if smiles_val:
-                import inchi as _inchi_mod
-                _inchi_result = _inchi_mod.inchi_from_smiles(smiles_val, iso_slug=iso_slug)
-                if _inchi_result is None:
-                    errors.append(
-                        f"[isotopologue.{iso_slug}] smiles = \"{smiles_val}\" is invalid — RDKit could not generate InChI/InChIKey.\n"
-                        f"  → Correct the SMILES, then also clear or update:\n"
-                        f"      inchi    = (re-derived automatically if left blank)\n"
-                        f"      inchikey = (re-derived automatically if left blank)"
-                    )
-
-            inchikey_val = iso_kv.get("inchikey", "").strip()
-            if inchikey_val:
-                import re as _re
-                if not _re.fullmatch(r"[A-Z]{14}-[A-Z]{10}-[A-Z]", inchikey_val):
-                    errors.append(
-                        f"[isotopologue.{iso_slug}] inchikey = \"{inchikey_val}\" does not match the InChIKey format.\n"
-                        f"  → Expected 27 uppercase letters in pattern XXXXXXXXXXXXXX-XXXXXXXXXX-X,\n"
-                        f"    e.g.:  inchikey = SPRIOUNJHPCKPV-MHGBRSHDSA-N"
                     )
 
             _VALID_CASE_LABELS = {

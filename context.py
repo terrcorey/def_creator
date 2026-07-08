@@ -46,7 +46,7 @@ class DefContext:
         return self.work_dir / iso_slug / f"{iso_slug}__{self.ds_name}.def"
 
 
-def run_init(ctx: DefContext, format_name: str = "exomol", verbose_input: bool = True, force: bool = False) -> None:
+def run_init(ctx: DefContext, verbose_input: bool = True, force: bool = False) -> None:
     """
     --init workflow:
       1. Validate work directory and all isotopologue directories
@@ -73,7 +73,7 @@ def run_init(ctx: DefContext, format_name: str = "exomol", verbose_input: bool =
 
     # Step 1: validate
     try:
-        iso_slugs_list = validator.validate_work_dir(ctx.work_dir)
+        validator.validate_work_dir(ctx.work_dir)
     except ValidationError as e:
         logging.error(f"context: validation failed: {e}")
         sys.exit(1)
@@ -86,28 +86,29 @@ def run_init(ctx: DefContext, format_name: str = "exomol", verbose_input: bool =
             sys.exit(1)
 
     # Step 2 & 3: extract and cache
+    # Auto-derive base SMILES (and base InChI) for pre-filling [dataset] in the .inp.
+    # All isotopologues in a dataset share the same molecule, so one derivation suffices.
+    iso_slugs_all = [slug for slug, _ in ctx.isotopologue_dirs()]
+    base_smiles_prefill = ""
+    base_inchi_prefill = ""
+    if iso_slugs_all:
+        atoms0, charge0 = extractor.expand_slug_atoms(iso_slugs_all[0])
+        auto_smiles = inchi_mod.base_smiles_from_atoms(atoms0, charge0)
+        if auto_smiles:
+            base_smiles_prefill = auto_smiles
+            result0 = inchi_mod.inchi_from_smiles(auto_smiles)
+            if result0:
+                base_inchi_prefill = result0[0]
+            logging.info(f"context: auto-derived base SMILES '{base_smiles_prefill}'")
+        else:
+            logging.info("context: base SMILES could not be auto-derived (repeated elements) — user must supply")
+
     extracted: dict[str, dict] = {}
     states_summaries: dict[str, dict] = {}
 
     for iso_slug, iso_dir in ctx.isotopologue_dirs():
         logging.info(f"context: extracting data for '{iso_slug}'")
-        atoms, charge = extractor.expand_slug_atoms(iso_slug)
-        iso_smiles = inchi_mod.smiles_from_atoms(atoms, charge)
-        iso_inchi: str | None = None
-        iso_inchikey: str | None = None
-        if iso_smiles is not None:
-            result = inchi_mod.inchi_from_smiles(iso_smiles, iso_slug=iso_slug)
-            if result:
-                iso_inchi, iso_inchikey = result
-                logging.info(f"context: auto-derived SMILES/InChI/InChIKey for '{iso_slug}'")
-            else:
-                logging.info(f"context: SMILES generated for '{iso_slug}' but InChI derivation failed — user should verify")
-        else:
-            logging.info(f"context: cannot auto-generate SMILES for '{iso_slug}' (repeated non-H elements) — user must supply")
-        data = extractor.extract_all(
-            iso_slug, iso_dir, ctx.ds_name,
-            smiles=iso_smiles, inchi=iso_inchi, inchikey=iso_inchikey,
-        )
+        data = extractor.extract_all(iso_slug, iso_dir, ctx.ds_name)
         extracted[iso_slug] = data
 
         temp_path = ctx.def_json_temp_path(iso_slug)
@@ -128,6 +129,8 @@ def run_init(ctx: DefContext, format_name: str = "exomol", verbose_input: bool =
         states_summaries=states_summaries,
         extracted_data=extracted,
         verbose=verbose_input,
+        base_smiles=base_smiles_prefill,
+        base_inchi=base_inchi_prefill,
     )
     inp_path = ctx.inp_path()
     if inp_path.exists():
@@ -207,7 +210,7 @@ def run_build(ctx: DefContext, format_name: str = "exomol") -> None:
     rend = renderer.get_renderer(format_name)
     any_missing = False
 
-    for iso_slug, iso_dir in ctx.isotopologue_dirs():
+    for iso_slug, _ in ctx.isotopologue_dirs():
         logging.info(f"context: building '{iso_slug}'")
 
         # Load temp cache written by --init
@@ -225,20 +228,23 @@ def run_build(ctx: DefContext, format_name: str = "exomol") -> None:
         iso_user = dict(dataset_user)
         iso_user.update(per_iso_user.get(iso_slug, {}))
 
-        # Populate inchi/inchikey from whatever the user supplied:
-        #   smiles present, inchi blank  → derive both from smiles
-        #   smiles blank, inchi present, inchikey blank → derive inchikey from inchi
-        #   smiles blank, both inchi and inchikey present → use as-is (no derivation needed)
-        if not iso_user.get("inchi") and iso_user.get("smiles"):
-            result = inchi_mod.inchi_from_smiles(iso_user["smiles"], iso_slug=iso_slug)
+        # Derive per-isotopologue InChI/InChIKey from the dataset-level SMILES.
+        # The user never fills in per-isotopologue inchi/inchikey — they supply the
+        # base (non-isotopic) SMILES once in [dataset], and the isotope masses are added here.
+        # Fallback: if smiles is blank but base_inchi is provided, derive SMILES from it first.
+        base_smiles = dataset_user.get("smiles", "").strip()
+        if not base_smiles:
+            base_inchi = dataset_user.get("base_inchi", "").strip()
+            if base_inchi:
+                base_smiles = inchi_mod.smiles_from_inchi(base_inchi) or ""
+                if base_smiles:
+                    logging.info(f"context: derived base SMILES from InChI for '{iso_slug}'")
+        if base_smiles:
+            atoms, _ = extractor.expand_slug_atoms(iso_slug)
+            result = inchi_mod.derive_iso_inchi(base_smiles, atoms, iso_slug=iso_slug)
             if result:
                 iso_user["inchi"], iso_user["inchikey"] = result
-                logging.info(f"context: derived InChI/InChIKey from SMILES for '{iso_slug}'")
-        elif iso_user.get("inchi") and not iso_user.get("inchikey"):
-            derived_key = inchi_mod.inchikey_from_inchi(iso_user["inchi"])
-            if derived_key:
-                iso_user["inchikey"] = derived_key
-                logging.info(f"context: derived InChIKey from provided InChI for '{iso_slug}'")
+                logging.info(f"context: derived isotopologue InChI/InChIKey for '{iso_slug}'")
 
         # Merge auto + user
         merged = merger.merge_iso(auto_data, iso_user)

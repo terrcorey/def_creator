@@ -62,7 +62,7 @@ def main() -> None:
 
     #call context.py for logic, add more if else blocks for other templates
     if args.init:
-        context.run_init(ctx, format_name=args.format_name, verbose_input=args.verbose_input, force=args.force)
+        context.run_init(ctx, verbose_input=args.verbose_input, force=args.force)
     else:
         context.run_build(ctx, format_name=args.format_name)
 

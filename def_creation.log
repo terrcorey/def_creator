@@ -812,3 +812,133 @@
 2026-07-07 18:19:00,775 - INFO - context: run_build for '/home/tcorey/Desktop/workspace/def_creator/samples/COmet' (ds_name='COmet')
 2026-07-07 18:19:00,775 - INFO - inp_handler: parsing '/home/tcorey/Desktop/workspace/def_creator/samples/COmet/COmet.inp'
 2026-07-07 18:19:00,776 - INFO - inp_handler: parsed 1 isotopologue(s): ['12C-16O_p']
+2026-07-08 11:12:51,851 - INFO - create_def: work_dir='/home/tcorey/Desktop/workspace/def_creator/samples/COmet', ds_name='COmet', format='exomol', init=True
+2026-07-08 11:12:51,852 - INFO - context: run_init for '/home/tcorey/Desktop/workspace/def_creator/samples/COmet' (ds_name='COmet', force=True)
+2026-07-08 11:12:51,852 - INFO - context: --force: removed '/home/tcorey/Desktop/workspace/def_creator/samples/COmet/COmet.inp'
+2026-07-08 11:12:51,853 - INFO - context: --force: removed '/home/tcorey/Desktop/workspace/def_creator/samples/COmet/12C-16O_p/12C-16O_p__COmet__temp.def.json'
+2026-07-08 11:12:51,853 - INFO - validator: checking '12C-16O_p' in '/home/tcorey/Desktop/workspace/def_creator/samples/COmet/12C-16O_p'
+2026-07-08 11:12:51,861 - INFO - validator: '12C-16O_p' passed
+2026-07-08 11:12:51,862 - INFO - context: auto-derived base SMILES '[C][O+]' for pre-fill
+2026-07-08 11:12:51,862 - INFO - context: extracting data for '12C-16O_p'
+2026-07-08 11:12:51,862 - INFO - extractor: extract_all for '12C-16O_p' in '/home/tcorey/Desktop/workspace/def_creator/samples/COmet/12C-16O_p'
+2026-07-08 11:12:51,862 - INFO - extractor: extract_iso_info for '12C-16O_p'
+2026-07-08 11:12:51,992 - INFO - extractor: extract_states_info in '/home/tcorey/Desktop/workspace/def_creator/samples/COmet/12C-16O_p'
+2026-07-08 11:12:52,005 - INFO - extractor: 29137 states, max_energy=83810.271943 cm-1
+2026-07-08 11:12:52,006 - INFO - extractor: extract_transitions_info in '/home/tcorey/Desktop/workspace/def_creator/samples/COmet/12C-16O_p'
+2026-07-08 11:12:55,395 - INFO - extractor: 10339562 transitions across 1 file(s), max_wavenumber=81598.417718 cm-1
+2026-07-08 11:12:55,395 - INFO - extractor: extract_pf_info in '/home/tcorey/Desktop/workspace/def_creator/samples/COmet/12C-16O_p'
+2026-07-08 11:12:55,399 - INFO - extractor: pf max_temp=15000.0 K, step=1.0 K
+2026-07-08 11:12:55,400 - INFO - context: wrote temp cache '/home/tcorey/Desktop/workspace/def_creator/samples/COmet/12C-16O_p/12C-16O_p__COmet__temp.def.json'
+2026-07-08 11:12:55,400 - INFO - context: summarising states columns for '12C-16O_p'
+2026-07-08 11:12:55,400 - INFO - extractor: summarise_states_columns in '/home/tcorey/Desktop/workspace/def_creator/samples/COmet/12C-16O_p'
+2026-07-08 11:12:55,598 - INFO - inp_handler: wrote '/home/tcorey/Desktop/workspace/def_creator/samples/COmet/COmet.inp'
+2026-07-08 11:19:57,546 - INFO - create_def: work_dir='/home/tcorey/Desktop/workspace/def_creator/samples/COmet', ds_name='COmet', format='exomol', init=False
+2026-07-08 11:19:57,546 - INFO - context: run_build for '/home/tcorey/Desktop/workspace/def_creator/samples/COmet' (ds_name='COmet')
+2026-07-08 11:19:57,547 - INFO - inp_handler: parsing '/home/tcorey/Desktop/workspace/def_creator/samples/COmet/COmet.inp'
+2026-07-08 11:19:57,548 - INFO - inp_handler: parsed 1 isotopologue(s): ['12C-16O_p']
+2026-07-08 11:19:57,597 - INFO - context: building '12C-16O_p'
+2026-07-08 11:19:57,598 - INFO - context: derived isotopologue InChI/InChIKey for '12C-16O_p'
+2026-07-08 11:19:57,598 - INFO - merger: '12C-16O_p' all required fields present
+2026-07-08 11:19:57,598 - INFO - renderer: ExoMolRenderer writing '/home/tcorey/Desktop/workspace/def_creator/samples/COmet/12C-16O_p/12C-16O_p__COmet.def'
+2026-07-08 11:19:57,599 - INFO - renderer: wrote 59 lines to '/home/tcorey/Desktop/workspace/def_creator/samples/COmet/12C-16O_p/12C-16O_p__COmet.def'
+2026-07-08 11:19:57,599 - INFO - context: wrote '/home/tcorey/Desktop/workspace/def_creator/samples/COmet/12C-16O_p/12C-16O_p__COmet.def'
+2026-07-08 11:19:57,599 - INFO - context: wrote '/home/tcorey/Desktop/workspace/def_creator/samples/COmet/12C-16O_p/12C-16O_p__COmet.def.json', removed temp '/home/tcorey/Desktop/workspace/def_creator/samples/COmet/12C-16O_p/12C-16O_p__COmet__temp.def.json'
+2026-07-08 11:41:35,587 - INFO - create_def: work_dir='/home/tcorey/Desktop/workspace/def_creator/samples/COmet', ds_name='COmet', format='exomol', init=True
+2026-07-08 11:41:35,587 - INFO - context: run_init for '/home/tcorey/Desktop/workspace/def_creator/samples/COmet' (ds_name='COmet', force=True)
+2026-07-08 11:41:35,588 - INFO - context: --force: removed '/home/tcorey/Desktop/workspace/def_creator/samples/COmet/COmet.inp'
+2026-07-08 11:41:35,588 - INFO - validator: checking '12C-16O_p' in '/home/tcorey/Desktop/workspace/def_creator/samples/COmet/12C-16O_p'
+2026-07-08 11:41:35,595 - INFO - validator: '12C-16O_p' passed
+2026-07-08 11:41:35,646 - INFO - context: auto-derived base SMILES '[C][O+]'
+2026-07-08 11:41:35,646 - INFO - context: extracting data for '12C-16O_p'
+2026-07-08 11:41:35,646 - INFO - extractor: extract_all for '12C-16O_p' in '/home/tcorey/Desktop/workspace/def_creator/samples/COmet/12C-16O_p'
+2026-07-08 11:41:35,646 - INFO - extractor: extract_iso_info for '12C-16O_p'
+2026-07-08 11:41:35,757 - INFO - extractor: extract_states_info in '/home/tcorey/Desktop/workspace/def_creator/samples/COmet/12C-16O_p'
+2026-07-08 11:41:35,770 - INFO - extractor: 29137 states, max_energy=83810.271943 cm-1
+2026-07-08 11:41:35,770 - INFO - extractor: extract_transitions_info in '/home/tcorey/Desktop/workspace/def_creator/samples/COmet/12C-16O_p'
+2026-07-08 11:41:38,985 - INFO - extractor: 10339562 transitions across 1 file(s), max_wavenumber=81598.417718 cm-1
+2026-07-08 11:41:38,985 - INFO - extractor: extract_pf_info in '/home/tcorey/Desktop/workspace/def_creator/samples/COmet/12C-16O_p'
+2026-07-08 11:41:38,989 - INFO - extractor: pf max_temp=15000.0 K, step=1.0 K
+2026-07-08 11:41:38,989 - INFO - context: wrote temp cache '/home/tcorey/Desktop/workspace/def_creator/samples/COmet/12C-16O_p/12C-16O_p__COmet__temp.def.json'
+2026-07-08 11:41:38,989 - INFO - context: summarising states columns for '12C-16O_p'
+2026-07-08 11:41:38,989 - INFO - extractor: summarise_states_columns in '/home/tcorey/Desktop/workspace/def_creator/samples/COmet/12C-16O_p'
+2026-07-08 11:41:39,189 - INFO - inp_handler: wrote '/home/tcorey/Desktop/workspace/def_creator/samples/COmet/COmet.inp'
+2026-07-08 11:42:32,000 - INFO - create_def: work_dir='/home/tcorey/Desktop/workspace/def_creator/samples/AloHa', ds_name='AloHa', format='exomol', init=True
+2026-07-08 11:42:32,000 - INFO - context: run_init for '/home/tcorey/Desktop/workspace/def_creator/samples/AloHa' (ds_name='AloHa', force=True)
+2026-07-08 11:42:32,000 - INFO - context: --force: removed '/home/tcorey/Desktop/workspace/def_creator/samples/AloHa/AloHa.inp'
+2026-07-08 11:42:32,000 - INFO - context: --force: removed '/home/tcorey/Desktop/workspace/def_creator/samples/AloHa/27Al-1H/27Al-1H__AloHa__temp.def.json'
+2026-07-08 11:42:32,000 - INFO - validator: checking '27Al-1H' in '/home/tcorey/Desktop/workspace/def_creator/samples/AloHa/27Al-1H'
+2026-07-08 11:42:32,007 - INFO - validator: '27Al-1H' passed
+2026-07-08 11:42:32,055 - INFO - context: auto-derived base SMILES '[Al][H]'
+2026-07-08 11:42:32,055 - INFO - context: extracting data for '27Al-1H'
+2026-07-08 11:42:32,055 - INFO - extractor: extract_all for '27Al-1H' in '/home/tcorey/Desktop/workspace/def_creator/samples/AloHa/27Al-1H'
+2026-07-08 11:42:32,055 - INFO - extractor: extract_iso_info for '27Al-1H'
+2026-07-08 11:42:32,157 - INFO - extractor: extract_states_info in '/home/tcorey/Desktop/workspace/def_creator/samples/AloHa/27Al-1H'
+2026-07-08 11:42:32,158 - INFO - extractor: 1364 states, max_energy=29127.903725 cm-1
+2026-07-08 11:42:32,158 - INFO - extractor: extract_transitions_info in '/home/tcorey/Desktop/workspace/def_creator/samples/AloHa/27Al-1H'
+2026-07-08 11:42:32,174 - INFO - extractor: 29725 transitions across 1 file(s), max_wavenumber=24585.495814 cm-1
+2026-07-08 11:42:32,174 - INFO - extractor: extract_pf_info in '/home/tcorey/Desktop/workspace/def_creator/samples/AloHa/27Al-1H'
+2026-07-08 11:42:32,176 - INFO - extractor: pf max_temp=5000.0 K, step=1.0 K
+2026-07-08 11:42:32,176 - INFO - context: wrote temp cache '/home/tcorey/Desktop/workspace/def_creator/samples/AloHa/27Al-1H/27Al-1H__AloHa__temp.def.json'
+2026-07-08 11:42:32,177 - INFO - context: summarising states columns for '27Al-1H'
+2026-07-08 11:42:32,177 - INFO - extractor: summarise_states_columns in '/home/tcorey/Desktop/workspace/def_creator/samples/AloHa/27Al-1H'
+2026-07-08 11:42:32,197 - INFO - inp_handler: wrote '/home/tcorey/Desktop/workspace/def_creator/samples/AloHa/AloHa.inp'
+2026-07-08 11:46:29,850 - INFO - create_def: work_dir='/home/tcorey/Desktop/workspace/def_creator/samples/AloHa', ds_name='AloHa', format='exomol', init=True
+2026-07-08 11:46:29,850 - INFO - context: run_init for '/home/tcorey/Desktop/workspace/def_creator/samples/AloHa' (ds_name='AloHa', force=True)
+2026-07-08 11:46:29,850 - INFO - context: --force: removed '/home/tcorey/Desktop/workspace/def_creator/samples/AloHa/AloHa.inp'
+2026-07-08 11:46:29,850 - INFO - context: --force: removed '/home/tcorey/Desktop/workspace/def_creator/samples/AloHa/27Al-1H/27Al-1H__AloHa__temp.def.json'
+2026-07-08 11:46:29,850 - INFO - validator: checking '27Al-1H' in '/home/tcorey/Desktop/workspace/def_creator/samples/AloHa/27Al-1H'
+2026-07-08 11:46:29,855 - INFO - validator: '27Al-1H' passed
+2026-07-08 11:46:29,905 - INFO - context: auto-derived base SMILES '[Al][H]'
+2026-07-08 11:46:29,905 - INFO - context: extracting data for '27Al-1H'
+2026-07-08 11:46:29,905 - INFO - extractor: extract_all for '27Al-1H' in '/home/tcorey/Desktop/workspace/def_creator/samples/AloHa/27Al-1H'
+2026-07-08 11:46:29,905 - INFO - extractor: extract_iso_info for '27Al-1H'
+2026-07-08 11:46:30,008 - INFO - extractor: extract_states_info in '/home/tcorey/Desktop/workspace/def_creator/samples/AloHa/27Al-1H'
+2026-07-08 11:46:30,010 - INFO - extractor: 1364 states, max_energy=29127.903725 cm-1
+2026-07-08 11:46:30,010 - INFO - extractor: extract_transitions_info in '/home/tcorey/Desktop/workspace/def_creator/samples/AloHa/27Al-1H'
+2026-07-08 11:46:30,024 - INFO - extractor: 29725 transitions across 1 file(s), max_wavenumber=24585.495814 cm-1
+2026-07-08 11:46:30,025 - INFO - extractor: extract_pf_info in '/home/tcorey/Desktop/workspace/def_creator/samples/AloHa/27Al-1H'
+2026-07-08 11:46:30,026 - INFO - extractor: pf max_temp=5000.0 K, step=1.0 K
+2026-07-08 11:46:30,026 - INFO - context: wrote temp cache '/home/tcorey/Desktop/workspace/def_creator/samples/AloHa/27Al-1H/27Al-1H__AloHa__temp.def.json'
+2026-07-08 11:46:30,026 - INFO - context: summarising states columns for '27Al-1H'
+2026-07-08 11:46:30,026 - INFO - extractor: summarise_states_columns in '/home/tcorey/Desktop/workspace/def_creator/samples/AloHa/27Al-1H'
+2026-07-08 11:46:30,047 - INFO - inp_handler: wrote '/home/tcorey/Desktop/workspace/def_creator/samples/AloHa/AloHa.inp'
+2026-07-08 11:49:37,635 - INFO - create_def: work_dir='/home/tcorey/Desktop/workspace/def_creator/samples/AloHa', ds_name='AloHa', format='exomol', init=True
+2026-07-08 11:49:37,635 - INFO - context: run_init for '/home/tcorey/Desktop/workspace/def_creator/samples/AloHa' (ds_name='AloHa', force=True)
+2026-07-08 11:49:37,635 - INFO - context: --force: removed '/home/tcorey/Desktop/workspace/def_creator/samples/AloHa/AloHa.inp'
+2026-07-08 11:49:37,636 - INFO - context: --force: removed '/home/tcorey/Desktop/workspace/def_creator/samples/AloHa/27Al-1H/27Al-1H__AloHa__temp.def.json'
+2026-07-08 11:49:37,636 - INFO - validator: checking '27Al-1H' in '/home/tcorey/Desktop/workspace/def_creator/samples/AloHa/27Al-1H'
+2026-07-08 11:49:37,641 - INFO - validator: '27Al-1H' passed
+2026-07-08 11:49:37,692 - INFO - context: auto-derived base SMILES '[Al][H]'
+2026-07-08 11:49:37,692 - INFO - context: extracting data for '27Al-1H'
+2026-07-08 11:49:37,692 - INFO - extractor: extract_all for '27Al-1H' in '/home/tcorey/Desktop/workspace/def_creator/samples/AloHa/27Al-1H'
+2026-07-08 11:49:37,692 - INFO - extractor: extract_iso_info for '27Al-1H'
+2026-07-08 11:49:37,793 - INFO - extractor: extract_states_info in '/home/tcorey/Desktop/workspace/def_creator/samples/AloHa/27Al-1H'
+2026-07-08 11:49:37,795 - INFO - extractor: 1364 states, max_energy=29127.903725 cm-1
+2026-07-08 11:49:37,795 - INFO - extractor: extract_transitions_info in '/home/tcorey/Desktop/workspace/def_creator/samples/AloHa/27Al-1H'
+2026-07-08 11:49:37,809 - INFO - extractor: 29725 transitions across 1 file(s), max_wavenumber=24585.495814 cm-1
+2026-07-08 11:49:37,809 - INFO - extractor: extract_pf_info in '/home/tcorey/Desktop/workspace/def_creator/samples/AloHa/27Al-1H'
+2026-07-08 11:49:37,811 - INFO - extractor: pf max_temp=5000.0 K, step=1.0 K
+2026-07-08 11:49:37,811 - INFO - context: wrote temp cache '/home/tcorey/Desktop/workspace/def_creator/samples/AloHa/27Al-1H/27Al-1H__AloHa__temp.def.json'
+2026-07-08 11:49:37,811 - INFO - context: summarising states columns for '27Al-1H'
+2026-07-08 11:49:37,811 - INFO - extractor: summarise_states_columns in '/home/tcorey/Desktop/workspace/def_creator/samples/AloHa/27Al-1H'
+2026-07-08 11:49:37,832 - INFO - inp_handler: wrote '/home/tcorey/Desktop/workspace/def_creator/samples/AloHa/AloHa.inp'
+2026-07-08 12:12:19,869 - INFO - create_def: work_dir='/home/tcorey/Desktop/workspace/def_creator/samples/AloHa', ds_name='AloHa', format='exomol', init=True
+2026-07-08 12:12:19,869 - INFO - context: run_init for '/home/tcorey/Desktop/workspace/def_creator/samples/AloHa' (ds_name='AloHa', force=True)
+2026-07-08 12:12:19,869 - INFO - context: --force: removed '/home/tcorey/Desktop/workspace/def_creator/samples/AloHa/AloHa.inp'
+2026-07-08 12:12:19,869 - INFO - context: --force: removed '/home/tcorey/Desktop/workspace/def_creator/samples/AloHa/27Al-1H/27Al-1H__AloHa__temp.def.json'
+2026-07-08 12:12:19,869 - INFO - validator: checking '27Al-1H' in '/home/tcorey/Desktop/workspace/def_creator/samples/AloHa/27Al-1H'
+2026-07-08 12:12:19,876 - INFO - validator: '27Al-1H' passed
+2026-07-08 12:12:19,927 - INFO - context: auto-derived base SMILES '[Al][H]'
+2026-07-08 12:12:19,927 - INFO - context: extracting data for '27Al-1H'
+2026-07-08 12:12:19,927 - INFO - extractor: extract_all for '27Al-1H' in '/home/tcorey/Desktop/workspace/def_creator/samples/AloHa/27Al-1H'
+2026-07-08 12:12:19,927 - INFO - extractor: extract_iso_info for '27Al-1H'
+2026-07-08 12:12:20,029 - INFO - extractor: extract_states_info in '/home/tcorey/Desktop/workspace/def_creator/samples/AloHa/27Al-1H'
+2026-07-08 12:12:20,030 - INFO - extractor: 1364 states, max_energy=29127.903725 cm-1
+2026-07-08 12:12:20,030 - INFO - extractor: extract_transitions_info in '/home/tcorey/Desktop/workspace/def_creator/samples/AloHa/27Al-1H'
+2026-07-08 12:12:20,044 - INFO - extractor: 29725 transitions across 1 file(s), max_wavenumber=24585.495814 cm-1
+2026-07-08 12:12:20,044 - INFO - extractor: extract_pf_info in '/home/tcorey/Desktop/workspace/def_creator/samples/AloHa/27Al-1H'
+2026-07-08 12:12:20,046 - INFO - extractor: pf max_temp=5000.0 K, step=1.0 K
+2026-07-08 12:12:20,046 - INFO - context: wrote temp cache '/home/tcorey/Desktop/workspace/def_creator/samples/AloHa/27Al-1H/27Al-1H__AloHa__temp.def.json'
+2026-07-08 12:12:20,047 - INFO - context: summarising states columns for '27Al-1H'
+2026-07-08 12:12:20,047 - INFO - extractor: summarise_states_columns in '/home/tcorey/Desktop/workspace/def_creator/samples/AloHa/27Al-1H'
+2026-07-08 12:12:20,210 - INFO - inp_handler: wrote '/home/tcorey/Desktop/workspace/def_creator/samples/AloHa/AloHa.inp'
