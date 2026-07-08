@@ -1,5 +1,25 @@
 # Changelog
 
+## [0.4.0] — 2026-07-08
+
+### Added
+- **Nuclear spin degeneracy validation** — `extractor.nuclear_spin_degeneracy(iso_slug)` computes g_ns = Π(2Iᵢ+1) from mendeleev nuclear spin values (handles fraction strings such as `"5/2"`); used in `validate_inp`:
+  - Error if any irrep degeneracy exceeds g_ns
+  - Error if molecule has no equivalent nuclei and any irrep degeneracy ≠ g_ns (all irreps must share the same weight for heteronuclear molecules)
+  - Equivalent-nuclei case (ortho/para split) is flagged informatively but not constrained beyond the g_ns ceiling
+- **g_ns hint in `.inp` header** — `--init` auto-derives g_ns per isotopologue and adds it to the auto-derived header block with guidance on expected degeneracy values
+- **Half-integer column type** — `summarise_states_columns` now detects columns where all values are multiples of 0.5 (e.g. half-integer J) and labels them `half-integer` rather than `float`
+
+### Changed
+- **SMILES and InChI promoted to `[dataset]` level** — base (non-isotopic) SMILES and InChI are now single fields in the `[dataset]` section, shared across all isotopologues; isotope mass numbers are assigned per-isotopologue automatically at build time via `inchi.derive_iso_inchi`; users no longer fill in per-isotopologue SMILES or InChI/InChIKey
+- **Base SMILES and InChI auto-derived at `--init` time** — when SMILES can be auto-generated from the iso_slug, the corresponding base InChI is also computed; both are pre-filled in `[dataset]`
+- **`generate_blank_inp`** accepts `base_smiles` and `base_inchi` as direct parameters; removes the previous stash that wrote `base_smiles` as a non-template field into `.def.json`
+- **`run_init` signature** — removed unused `format_name` parameter
+- **States column summary moved inline** — per-column type/range info is now shown as a trailing `# col N  type  range` comment on each quantum label line rather than in a separate block; unassigned columns appear as blank placeholder lines with the summary comment
+- **Quantum label parser** strips inline `#` comments from label lines so the new inline column hints are ignored during parsing
+- **Comment text centralised** — all user-facing instruction strings moved from `generate_blank_inp` into a module-level `_INP_COMMENTS` dict with a `_comment_lines` helper; edit comment text in one place without touching generation logic
+- **Blank DOI now accepted** — `validate_inp` no longer errors on an empty `doi`; format is only validated when a non-empty value is provided
+
 ## [0.3.0] — 2026-07-07
 
 ### Added

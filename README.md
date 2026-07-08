@@ -79,7 +79,9 @@ All files in a set must have the same column format (3-column or 4-column). The 
 
 | Key                           | Description                                                                           |
 |-------------------------------|---------------------------------------------------------------------------------------|
-| `doi`                         | Publication DOI                                                                       |
+| `smiles`                      | Base molecule SMILES, no isotope mass numbers — auto-filled where possible (see below) |
+| `inchi`                       | Base molecule InChI — auto-derived from `smiles`; or fill manually if `smiles` is blank |
+| `doi`                         | Publication DOI (leave blank if not yet published)                                    |
 | `max_temperature`             | Maximum temperature of the linelist in K (author-stated)                              |
 | `cooling_function_available`  | `true` / `false`                                                                      |
 | `specific_heat_available`     | `true` / `false`                                                                      |
@@ -89,23 +91,19 @@ All files in a set must have the same column format (3-column or 4-column). The 
 
 | Key                           | Description                                                                           |
 |-------------------------------|---------------------------------------------------------------------------------------|
-| `smiles`                      | Isotopologue SMILES — auto-filled where possible (see below); used to derive InChI/InChIKey |
-| `inchi`                       | InChI identifier — auto-derived from `smiles`; or fill manually and leave `smiles` blank |
-| `inchikey`                    | InChIKey — auto-derived from `smiles` or `inchi`; or fill manually                   |
 | `cas_registry_number`         | CAS number (optional)                                                                 |
-| `point_group`                 | Symmetry group (e.g. `C`, `Cs`, `C2v`, `Dinfh`)                                       |
-| `irreps`                      | Irreducible representations as `label:degeneracy` pairs, e.g. `Sigma+:12, Sigma-:12`  |
+| `point_group`                 | Symmetry group (e.g. `C`, `Cs`, `C2v`, `Dinfh`)                                      |
+| `irreps`                      | Irreducible representations as `label:degeneracy` pairs, e.g. `Sigma+:12, Sigma-:12` |
 | `quantum_case_label`          | Quantum coupling case — one of: `dcs`, `dos`, `lpcs`, `lpos`, `asymcs`, `asymos`, `stos`, `stcs`, `sphcs`, `sphos` |
 
-**SMILES and InChI/InChIKey** are always written to the `.inp` for the user to verify. Three workflows are supported:
+**SMILES and InChI/InChIKey** are entered once at the `[dataset]` level. Isotope mass numbers are added to the SMILES automatically for each isotopologue at build time. Two workflows are supported:
 
-| `smiles` | `inchi` | `inchikey` | Result at build time |
-|----------|---------|------------|----------------------|
-| filled | blank | blank | InChI and InChIKey derived from SMILES |
-| blank | filled | blank | InChIKey derived from InChI |
-| blank | filled | filled | Used as-is |
+| `smiles` in `[dataset]` | `inchi` in `[dataset]` | Result at build time |
+|-------------------------|------------------------|----------------------|
+| filled | blank | InChI derived from SMILES; isotope layers added per-isotopologue |
+| blank | filled | SMILES derived from InChI; then isotope layers added per-isotopologue |
 
-SMILES is auto-generated for **diatomics** and **molecules where all elements are distinct** (chain notation `[massSymbol]...`). For molecules with any repeated non-H element (e.g. SO₂, CO₂), the field is left blank and must be filled or InChI/InChIKey provided directly.
+Base SMILES is auto-generated for **diatomics** and **molecules where all elements are distinct** (chain notation `[Symbol][Symbol]...`). For molecules with any repeated element (e.g. SO₂, CO₂), the field is left blank and the user must supply SMILES or InChI.
 
 **`[quantum_labels.<iso_slug>]`** — one per isotopologue (or one shared `[quantum_labels]` if `shared_quantum_labels = true`)
 
@@ -148,7 +146,8 @@ The following are computed automatically and do not need to be specified in the 
 - Partition function maximum temperature and step size — from the `.pf` file
 - Version date — today's date
 - Boolean availability flags — from quantum label names (see above)
-- SMILES, InChI, InChIKey — from isotopologue formula via RDKit (where possible; see table above)
+- SMILES, InChI, InChIKey — base SMILES/InChI auto-derived from isotopologue formula; per-isotopologue InChI/InChIKey generated at build time via RDKit (where possible; see table above)
+- Nuclear spin degeneracy (g_ns) — computed from mendeleev nuclear spin values and shown in the `.inp` header as a guide for filling in `irreps`
 
 ## Output encoding
 
