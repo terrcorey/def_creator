@@ -41,46 +41,90 @@ def _spot_check_trans(path: Path) -> None:
     logging.debug(f"validator: '{path.name}' spot-check OK ({len(df.columns)} columns)")
 
 
-def validate_work_dir(work_dir: Path) -> list[str]:
+def _data_files(work_dir: Path, iso_slug: str, ds_name: str, ext: str) -> list[Path]:
     """
-    Validates that work_dir exists and contains at least one isotopologue directory
-    (a directory whose name starts with a digit).
-    Returns the list of iso_slug names found.
+    Returns files in work_dir whose names start with '{iso_slug}__{ds_name}' and end
+    with '{ext}'. Plain files take precedence; a .bz2 file is only included when no
+    plain counterpart exists for that stem.
+    """
+    prefix = f"{iso_slug}__{ds_name}"
+    plain = sorted(
+        f for f in work_dir.iterdir()
+        if f.is_file() and f.name.startswith(prefix) and f.name.endswith(ext)
+    )
+    plain_set = set(plain)
+    compressed = sorted(
+        f for f in work_dir.iterdir()
+        if f.is_file()
+        and f.name.startswith(prefix)
+        and f.name.endswith(f"{ext}.bz2")
+        and f.with_suffix("") not in plain_set
+    )
+    return plain + compressed
+
+
+def discover_dataset(work_dir: Path) -> tuple[str, list[str]]:
+    """
+    Scans work_dir for files named '{iso_slug}__{ds_name}.states[.bz2]'.
+    Returns (ds_name, sorted list of iso_slugs).
+    Raises ValidationError if the directory doesn't exist, no qualifying files are
+    found, or files from multiple dataset names are detected.
     """
     if not work_dir.is_dir():
         raise ValidationError(f"Work directory '{work_dir}' does not exist")
-    iso_slugs = [
-        d.name for d in sorted(work_dir.iterdir())
-        if d.is_dir() and d.name[0].isdigit()
-    ]
+
+    ds_names: set[str] = set()
+    iso_slugs: set[str] = set()
+
+    for f in work_dir.iterdir():
+        if not f.is_file():
+            continue
+        name = f.name
+        if name.endswith(".bz2"):
+            name = name[:-4]
+        if not name.endswith(".states"):
+            continue
+        stem = name[:-7]  # strip '.states'
+        if "__" not in stem:
+            continue
+        iso_slug, ds_name = stem.split("__", 1)
+        if iso_slug and iso_slug[0].isdigit():
+            ds_names.add(ds_name)
+            iso_slugs.add(iso_slug)
+
     if not iso_slugs:
         raise ValidationError(
-            f"No isotopologue directories found in '{work_dir}'. "
-            "Expected subdirectories whose names start with a digit (e.g. '27Al-1H')."
+            f"No isotopologue data files found in '{work_dir}'. "
+            "Expected files named '<iso_slug>__<ds_name>.states' "
+            "(e.g. '27Al-1H__AloHa.states')."
         )
-    logging.debug(f"validator: found isotopologues: {iso_slugs}")
-    return iso_slugs
+    if len(ds_names) > 1:
+        raise ValidationError(
+            f"Multiple dataset names detected in '{work_dir}': {sorted(ds_names)}. "
+            "All files in a working directory must belong to the same dataset."
+        )
+
+    ds_name = ds_names.pop()
+    logging.debug(f"validator: discovered ds_name='{ds_name}', iso_slugs={sorted(iso_slugs)}")
+    return ds_name, sorted(iso_slugs)
 
 
-def _data_files(iso_dir: Path, ext: str) -> list[Path]:
-    """Plain files first; .bz2 only when no plain version exists for that stem."""
-    plain = list(iso_dir.rglob(f"*{ext}"))
-    plain_set = set(plain)
-    bz2 = [p for p in iso_dir.rglob(f"*{ext}.bz2") if p.with_suffix("") not in plain_set]
-    return plain + bz2
+def validate_work_dir(work_dir: Path) -> None:
+    """Confirms work_dir exists and is a directory."""
+    if not work_dir.is_dir():
+        raise ValidationError(f"Work directory '{work_dir}' does not exist")
 
 
-def validate_iso_dir(iso_dir: Path, iso_slug: str) -> None:
+def validate_iso_files(work_dir: Path, iso_slug: str, ds_name: str) -> None:
     """
-    Validates that iso_dir contains exactly one .states file, exactly one .pf file,
-    and at least one .trans file (compressed or uncompressed). Spot-checks each.
-    Treats a file and its .bz2 counterpart as a single file.
+    Validates that work_dir contains exactly one .states file, exactly one .pf file,
+    and at least one .trans file for the given iso_slug/ds_name. Spot-checks each file.
     """
-    logging.info(f"validator: checking '{iso_slug}' in '{iso_dir}'")
+    logging.info(f"validator: checking files for '{iso_slug}' in '{work_dir}'")
 
-    states_all = _data_files(iso_dir, ".states")
-    trans_all = _data_files(iso_dir, ".trans")
-    pf_all = list(iso_dir.rglob("*.pf"))
+    states_all = _data_files(work_dir, iso_slug, ds_name, ".states")
+    trans_all = _data_files(work_dir, iso_slug, ds_name, ".trans")
+    pf_all = _data_files(work_dir, iso_slug, ds_name, ".pf")
 
     logging.debug(
         f"validator: '{iso_slug}' — "
@@ -89,16 +133,19 @@ def validate_iso_dir(iso_dir: Path, iso_slug: str) -> None:
 
     if len(states_all) != 1:
         raise ValidationError(
-            f"Expected exactly 1 .states/.states.bz2 for '{iso_slug}', "
+            f"Expected exactly 1 .states file for '{iso_slug}', "
             f"found {len(states_all)}: {[p.name for p in states_all]}"
         )
     if len(pf_all) != 1:
         raise ValidationError(
-            f"Expected exactly 1 .pf for '{iso_slug}', found {len(pf_all)}"
+            f"Expected exactly 1 .pf file for '{iso_slug}', "
+            f"found {len(pf_all)}: {[p.name for p in pf_all]}. "
+            f"Expected name: '{iso_slug}__{ds_name}.pf'"
         )
     if len(trans_all) < 1:
         raise ValidationError(
-            f"Expected at least 1 .trans/.trans.bz2 for '{iso_slug}', found 0"
+            f"Expected at least 1 .trans file for '{iso_slug}', found 0. "
+            f"Expected naming: '{iso_slug}__{ds_name}[__<range>].trans[.bz2]'"
         )
 
     with tempfile.TemporaryDirectory() as tmpdir:

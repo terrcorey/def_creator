@@ -32,12 +32,26 @@ def slug_to_formula(slug: str) -> str:
     return formula
 
 
-def _data_files(iso_dir: Path, ext: str) -> list[Path]:
-    """Returns deduplicated list of data files: plain files first; .bz2 only when no plain exists."""
-    plain = list(iso_dir.rglob(f"*{ext}"))
+def _data_files(work_dir: Path, iso_slug: str, ds_name: str, ext: str) -> list[Path]:
+    """
+    Returns files in work_dir whose names start with '{iso_slug}__{ds_name}' and end
+    with '{ext}'. Plain files take precedence; a .bz2 file is only included when no
+    plain counterpart exists for that stem.
+    """
+    prefix = f"{iso_slug}__{ds_name}"
+    plain = sorted(
+        f for f in work_dir.iterdir()
+        if f.is_file() and f.name.startswith(prefix) and f.name.endswith(ext)
+    )
     plain_set = set(plain)
-    bz2 = [p for p in iso_dir.rglob(f"*{ext}.bz2") if p.with_suffix("") not in plain_set]
-    return plain + bz2
+    compressed = sorted(
+        f for f in work_dir.iterdir()
+        if f.is_file()
+        and f.name.startswith(prefix)
+        and f.name.endswith(f"{ext}.bz2")
+        and f.with_suffix("") not in plain_set
+    )
+    return plain + compressed
 
 
 def _open_maybe_bz2(path: Path, tmpdir: str) -> Path:
@@ -138,12 +152,12 @@ def extract_iso_info(iso_slug: str) -> dict:
     }
 
 
-def extract_states_info(iso_dir: Path) -> dict:
+def extract_states_info(work_dir: Path, iso_slug: str, ds_name: str) -> dict:
     """Counts states and finds the maximum energy from the .states file."""
-    logging.info(f"extractor: extract_states_info in '{iso_dir}'")
-    states_files = _data_files(iso_dir, ".states")
+    logging.info(f"extractor: extract_states_info for '{iso_slug}'")
+    states_files = _data_files(work_dir, iso_slug, ds_name, ".states")
     if not states_files:
-        raise FileNotFoundError(f"No .states file found in '{iso_dir}'")
+        raise FileNotFoundError(f"No .states file found for '{iso_slug}' in '{work_dir}'")
 
     with tempfile.TemporaryDirectory() as tmpdir:
         path = _open_maybe_bz2(states_files[0], tmpdir)
@@ -163,9 +177,9 @@ def extract_states_info(iso_dir: Path) -> dict:
     return {"number_of_states": num_lines, "max_energy": max_energy}
 
 
-def _load_state_energies(iso_dir: Path) -> dict[int, float]:
-    """Loads {state_id: energy_cm-1} from the .states file in iso_dir."""
-    states_files = _data_files(iso_dir, ".states")
+def _load_state_energies(work_dir: Path, iso_slug: str, ds_name: str) -> dict[int, float]:
+    """Loads {state_id: energy_cm-1} from the .states file."""
+    states_files = _data_files(work_dir, iso_slug, ds_name, ".states")
     if not states_files:
         return {}
     energies: dict[int, float] = {}
@@ -180,16 +194,16 @@ def _load_state_energies(iso_dir: Path) -> dict[int, float]:
     return energies
 
 
-def extract_transitions_info(iso_dir: Path) -> dict:
+def extract_transitions_info(work_dir: Path, iso_slug: str, ds_name: str) -> dict:
     """
     Counts transitions and finds the maximum wavenumber across all .trans files.
     If the trans file has only 3 columns (id_u id_l A), the wavenumber is computed
     as abs(E_upper - E_lower) using the .states file.
     """
-    logging.info(f"extractor: extract_transitions_info in '{iso_dir}'")
-    trans_files = _data_files(iso_dir, ".trans")
+    logging.info(f"extractor: extract_transitions_info for '{iso_slug}'")
+    trans_files = _data_files(work_dir, iso_slug, ds_name, ".trans")
     if not trans_files:
-        raise FileNotFoundError(f"No .trans file found in '{iso_dir}'")
+        raise FileNotFoundError(f"No .trans file found for '{iso_slug}' in '{work_dir}'")
 
     # Detect column count from first non-empty line
     has_wavenumber_col = False
@@ -202,11 +216,11 @@ def extract_transitions_info(iso_dir: Path) -> dict:
                     has_wavenumber_col = len(stripped.split()) >= 4
                     break
 
-    # 3-column format: load states energies to compute wavenumber
+    # 3-column format: load state energies to compute wavenumber
     state_energies: dict[int, float] = {}
     if not has_wavenumber_col:
         logging.debug("extractor: trans file has 3 columns — computing wavenumber from states")
-        state_energies = _load_state_energies(iso_dir)
+        state_energies = _load_state_energies(work_dir, iso_slug, ds_name)
 
     total_lines = 0
     max_wavenumber = 0.0
@@ -242,12 +256,12 @@ def extract_transitions_info(iso_dir: Path) -> dict:
     }
 
 
-def extract_pf_info(iso_dir: Path) -> dict:
+def extract_pf_info(work_dir: Path, iso_slug: str, ds_name: str) -> dict:
     """Extracts max temperature and step size from the .pf file."""
-    logging.info(f"extractor: extract_pf_info in '{iso_dir}'")
-    pf_files = list(iso_dir.rglob("*.pf"))
+    logging.info(f"extractor: extract_pf_info for '{iso_slug}'")
+    pf_files = _data_files(work_dir, iso_slug, ds_name, ".pf")
     if not pf_files:
-        raise FileNotFoundError(f"No .pf file found in '{iso_dir}'")
+        raise FileNotFoundError(f"No .pf file found for '{iso_slug}' in '{work_dir}'")
 
     temperatures = []
     with open(pf_files[0], "r", encoding="utf-8") as f:
@@ -268,16 +282,16 @@ def extract_pf_info(iso_dir: Path) -> dict:
     }
 
 
-def summarise_states_columns(iso_dir: Path) -> dict:
+def summarise_states_columns(work_dir: Path, iso_slug: str, ds_name: str) -> dict:
     """
     Reads the full .states file and returns:
       - 'first_rows': aligned string table of the first 5 rows (from df.to_string)
       - 'columns': list of per-column summaries
-          For numeric columns: {col, type ('integer'/'float'), min, max}
+          For numeric columns: {col, type ('integer'/'float'/'half-integer'), min, max}
           For string columns:  {col, type 'string', values (up to 3), more (bool)}
     """
-    logging.info(f"extractor: summarise_states_columns in '{iso_dir}'")
-    states_files = _data_files(iso_dir, ".states")
+    logging.info(f"extractor: summarise_states_columns for '{iso_slug}'")
+    states_files = _data_files(work_dir, iso_slug, ds_name, ".states")
     if not states_files:
         return {"first_rows": [], "columns": []}
 
@@ -325,7 +339,6 @@ def slug_to_hill_formula_and_charge(iso_slug: str) -> tuple[str, int]:
     Returns the plain Hill formula and ionic charge for the molecule described by iso_slug.
     Hill order: C first (if present), H second, then alphabetical; no C → all alphabetical.
     e.g. '27Al-1H' → ('AlH', 0),  '12C-16O2' → ('CO2', 0)
-    Used by context.py to call inchi.fetch_base_inchi once per dataset.
     """
     from collections import Counter
 
@@ -339,16 +352,16 @@ def slug_to_hill_formula_and_charge(iso_slug: str) -> tuple[str, int]:
     return formula, charge
 
 
-def extract_all(iso_slug: str, iso_dir: Path, ds_name: str) -> dict:
+def extract_all(iso_slug: str, work_dir: Path, ds_name: str) -> dict:
     """
     Assembles a full exomol.json-shaped dict with all auto-derivable fields populated.
     User-supplied fields (including inchi/inchikey) are set to None and filled at build time.
     """
-    logging.info(f"extractor: extract_all for '{iso_slug}' in '{iso_dir}'")
+    logging.info(f"extractor: extract_all for '{iso_slug}'")
     iso_info = extract_iso_info(iso_slug)
-    states_info = extract_states_info(iso_dir)
-    trans_info = extract_transitions_info(iso_dir)
-    pf_info = extract_pf_info(iso_dir)
+    states_info = extract_states_info(work_dir, iso_slug, ds_name)
+    trans_info = extract_transitions_info(work_dir, iso_slug, ds_name)
+    pf_info = extract_pf_info(work_dir, iso_slug, ds_name)
 
     return {
         "isotopologue": {

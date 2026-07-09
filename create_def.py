@@ -5,6 +5,7 @@ from pathlib import Path
 
 import context
 from context import DefContext
+from validator import ValidationError
 
 
 def main() -> None:
@@ -54,10 +55,14 @@ def main() -> None:
         ],
     )
 
-    ctx = DefContext(work_dir=args.work_dir.resolve())
+    try:
+        ctx = DefContext(work_dir=args.work_dir.resolve())
+    except ValidationError as e:
+        logging.error(str(e))
+        sys.exit(1)
     logging.info(
         f"create_def: work_dir='{ctx.work_dir}', ds_name='{ctx.ds_name}', "
-        f"format='{args.format_name}', init={args.init}"
+        f"iso_slugs={ctx.iso_slugs}, format='{args.format_name}', init={args.init}"
     )
 
     #call context.py for logic, add more if else blocks for other templates

@@ -5,7 +5,7 @@ Also provides the top-level run_init() and run_build() orchestration functions.
 import json
 import logging
 import sys
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 
 import extractor
@@ -20,38 +20,34 @@ from validator import ValidationError
 @dataclass
 class DefContext:
     work_dir: Path
+    ds_name: str = field(init=False)
+    iso_slugs: list[str] = field(init=False)
 
-    @property
-    def ds_name(self) -> str:
-        return self.work_dir.name
+    def __post_init__(self):
+        self.ds_name, self.iso_slugs = validator.discover_dataset(self.work_dir)
 
-    def isotopologue_dirs(self) -> list[tuple[str, Path]]:
-        """Returns list of (iso_slug, iso_dir) for each isotopologue subdirectory."""
-        result = []
-        for d in sorted(self.work_dir.iterdir()):
-            if d.is_dir() and d.name[0].isdigit():
-                result.append((d.name, d))
-        return result
+    def isotopologue_slugs(self) -> list[str]:
+        return list(self.iso_slugs)
 
     def def_json_path(self, iso_slug: str) -> Path:
-        return self.work_dir / iso_slug / f"{iso_slug}__{self.ds_name}.def.json"
+        return self.work_dir / f"{iso_slug}__{self.ds_name}.def.json"
 
     def def_json_temp_path(self, iso_slug: str) -> Path:
-        return self.work_dir / iso_slug / f"{iso_slug}__{self.ds_name}__temp.def.json"
+        return self.work_dir / f"{iso_slug}__{self.ds_name}__temp.def.json"
 
     def inp_path(self) -> Path:
         return self.work_dir / f"{self.ds_name}.inp"
 
     def def_output_path(self, iso_slug: str) -> Path:
-        return self.work_dir / iso_slug / f"{iso_slug}__{self.ds_name}.def"
+        return self.work_dir / f"{iso_slug}__{self.ds_name}.def"
 
 
 def run_init(ctx: DefContext, verbose_input: bool = True, force: bool = False) -> None:
     """
     --init workflow:
-      1. Validate work directory and all isotopologue directories
+      1. Validate required files exist for each isotopologue
       2. Extract auto-derivable fields for each isotopologue
-      3. Write .def.json cache for each isotopologue
+      3. Write .def.json temp cache for each isotopologue
       4. Summarise .states columns for each isotopologue
       5. Generate and write the blank .inp template
     """
@@ -64,23 +60,17 @@ def run_init(ctx: DefContext, verbose_input: bool = True, force: bool = False) -
             inp_path.unlink()
             logging.info(f"context: --force: removed '{inp_path}'")
             print(f"  Removed existing: {inp_path}")
-        for iso_slug, _ in ctx.isotopologue_dirs():
+        for iso_slug in ctx.isotopologue_slugs():
             temp_path = ctx.def_json_temp_path(iso_slug)
             if temp_path.exists():
                 temp_path.unlink()
                 logging.info(f"context: --force: removed '{temp_path}'")
                 print(f"  Removed existing: {temp_path}")
 
-    # Step 1: validate
-    try:
-        validator.validate_work_dir(ctx.work_dir)
-    except ValidationError as e:
-        logging.error(f"context: validation failed: {e}")
-        sys.exit(1)
-
-    for iso_slug, iso_dir in ctx.isotopologue_dirs():
+    # Step 1: validate files for each isotopologue
+    for iso_slug in ctx.isotopologue_slugs():
         try:
-            validator.validate_iso_dir(iso_dir, iso_slug)
+            validator.validate_iso_files(ctx.work_dir, iso_slug, ctx.ds_name)
         except ValidationError as e:
             logging.error(f"context: validation failed for '{iso_slug}': {e}")
             sys.exit(1)
@@ -88,7 +78,7 @@ def run_init(ctx: DefContext, verbose_input: bool = True, force: bool = False) -
     # Step 2 & 3: extract and cache
     # Auto-derive base SMILES (and base InChI) for pre-filling [dataset] in the .inp.
     # All isotopologues in a dataset share the same molecule, so one derivation suffices.
-    iso_slugs_all = [slug for slug, _ in ctx.isotopologue_dirs()]
+    iso_slugs_all = ctx.isotopologue_slugs()
     base_smiles_prefill = ""
     base_inchi_prefill = ""
     if iso_slugs_all:
@@ -106,26 +96,26 @@ def run_init(ctx: DefContext, verbose_input: bool = True, force: bool = False) -
     extracted: dict[str, dict] = {}
     states_summaries: dict[str, dict] = {}
 
-    for iso_slug, iso_dir in ctx.isotopologue_dirs():
+    for iso_slug in ctx.isotopologue_slugs():
         logging.info(f"context: extracting data for '{iso_slug}'")
-        data = extractor.extract_all(iso_slug, iso_dir, ctx.ds_name)
+        data = extractor.extract_all(iso_slug, ctx.work_dir, ctx.ds_name)
         extracted[iso_slug] = data
 
         temp_path = ctx.def_json_temp_path(iso_slug)
-        temp_path.parent.mkdir(parents=True, exist_ok=True)
         with open(temp_path, "w", encoding="utf-8") as f:
             json.dump(data, f, indent=4)
         logging.info(f"context: wrote temp cache '{temp_path}'")
 
         # Step 4: states column summary
         logging.info(f"context: summarising states columns for '{iso_slug}'")
-        states_summaries[iso_slug] = extractor.summarise_states_columns(iso_dir)
+        states_summaries[iso_slug] = extractor.summarise_states_columns(
+            ctx.work_dir, iso_slug, ctx.ds_name
+        )
 
     # Step 5: generate .inp
-    iso_slugs = [slug for slug, _ in ctx.isotopologue_dirs()]
     content = inp_handler.generate_blank_inp(
         ds_name=ctx.ds_name,
-        iso_slugs=iso_slugs,
+        iso_slugs=ctx.isotopologue_slugs(),
         states_summaries=states_summaries,
         extracted_data=extracted,
         verbose=verbose_input,
@@ -140,7 +130,7 @@ def run_init(ctx: DefContext, verbose_input: bool = True, force: bool = False) -
         inp_handler.write_inp(content, inp_path)
 
     print(f"\n--init complete.")
-    print(f"  Temp cache: {[str(ctx.def_json_temp_path(s)) for s, _ in ctx.isotopologue_dirs()]}")
+    print(f"  Temp cache: {[str(ctx.def_json_temp_path(s)) for s in ctx.isotopologue_slugs()]}")
     print(f"  Input template: {ctx.inp_path()}")
     print(f"\nFill in '{ctx.inp_path()}' and run again without --init to generate .def files.")
 
@@ -148,20 +138,13 @@ def run_init(ctx: DefContext, verbose_input: bool = True, force: bool = False) -
 def run_build(ctx: DefContext, format_name: str = "exomol") -> None:
     """
     Standard (no --init) workflow:
-      1. Validate work directory
-      2. Parse .inp file
-      3. For each isotopologue: load .def.json cache, merge with user input, validate completeness
+      1. Parse .inp file
+      2. Validate .inp content
+      3. For each isotopologue: load .def.json temp cache, merge with user input, validate completeness
       4. Optionally derive InChI/InChIKey from SMILES
       5. Render .def file
     """
     logging.info(f"context: run_build for '{ctx.work_dir}' (ds_name='{ctx.ds_name}')")
-
-    # Step 1: validate work dir
-    try:
-        validator.validate_work_dir(ctx.work_dir)
-    except ValidationError as e:
-        logging.error(f"context: {e}")
-        sys.exit(1)
 
     # Check .inp exists
     inp_path = ctx.inp_path()
@@ -172,13 +155,13 @@ def run_build(ctx: DefContext, format_name: str = "exomol") -> None:
         )
         sys.exit(1)
 
-    # Step 2: parse .inp
+    # Step 1: parse .inp
     parsed = inp_handler.parse_inp(inp_path)
     dataset_user = parsed["dataset"]
     per_iso_user = parsed["per_isotopologue"]
 
-    # Step 2b: validate .inp content (collect all errors before proceeding)
-    known_iso_slugs = [slug for slug, _ in ctx.isotopologue_dirs()]
+    # Step 1b: validate .inp content (collect all errors before proceeding)
+    known_iso_slugs = ctx.isotopologue_slugs()
     inp_errors, inp_warnings = inp_handler.validate_inp(inp_path, known_iso_slugs)
 
     if inp_warnings:
@@ -206,11 +189,11 @@ def run_build(ctx: DefContext, format_name: str = "exomol") -> None:
         print("Fix the above and re-run.")
         sys.exit(1)
 
-    # Step 3–5: merge, validate, render per isotopologue
+    # Step 2–5: merge, validate, render per isotopologue
     rend = renderer.get_renderer(format_name)
     any_missing = False
 
-    for iso_slug, _ in ctx.isotopologue_dirs():
+    for iso_slug in ctx.isotopologue_slugs():
         logging.info(f"context: building '{iso_slug}'")
 
         # Load temp cache written by --init
@@ -229,9 +212,6 @@ def run_build(ctx: DefContext, format_name: str = "exomol") -> None:
         iso_user.update(per_iso_user.get(iso_slug, {}))
 
         # Derive per-isotopologue InChI/InChIKey from the dataset-level SMILES.
-        # The user never fills in per-isotopologue inchi/inchikey — they supply the
-        # base (non-isotopic) SMILES once in [dataset], and the isotope masses are added here.
-        # Fallback: if smiles is blank but base_inchi is provided, derive SMILES from it first.
         base_smiles = dataset_user.get("smiles", "").strip()
         if not base_smiles:
             base_inchi = dataset_user.get("base_inchi", "").strip()
@@ -261,7 +241,6 @@ def run_build(ctx: DefContext, format_name: str = "exomol") -> None:
 
         # Render
         output_path = ctx.def_output_path(iso_slug)
-        output_path.parent.mkdir(parents=True, exist_ok=True)
         try:
             rend.render(merged, output_path)
             logging.info(f"context: wrote '{output_path}'")

@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.5.0] — 2026-07-09
+
+### Changed
+- **Flat working directory** — the required `{work_dir}/{iso_slug}/` subdirectory structure has been removed; all data files now live directly in the working directory alongside generated outputs. Users place files in any directory and the tool auto-detects everything from the file names.
+- **File-name-based discovery** — `--init` and build scan the working directory for `*.states[.bz2]` files named `{iso_slug}__{ds_name}.states`; `ds_name` and the full isotopologue list are derived from these names. No manual configuration of dataset name or isotopologue list is required.
+- **`DefContext`** — `ds_name` and `iso_slugs` are now discovered via `validator.discover_dataset()` at construction time rather than read from the directory name and subdirectory listing; `isotopologue_dirs()` replaced by `isotopologue_slugs()`.
+- **Output paths are flat** — `.def`, `.def.json`, `__temp.def.json`, and `.inp` files are all written directly into the working directory (`{iso_slug}__{ds_name}.def` etc.).
+- **`extractor` functions** — all functions that previously accepted `iso_dir: Path` now accept `(work_dir: Path, iso_slug: str, ds_name: str)` and search for files by name prefix rather than by directory.
+- **`validator.validate_iso_files`** replaces `validate_iso_dir` — validates that the working directory contains exactly one `.states` file, exactly one `.pf` file, and at least one `.trans` file for each discovered iso_slug/ds_name combination; provides clear error messages including the expected filename pattern when files are missing.
+- **`validator.discover_dataset`** — new function that scans `work_dir` for `*.states` files, parses `iso_slug`/`ds_name` from their stems, and raises `ValidationError` if no qualifying files are found or if multiple dataset names are detected.
+
 ## [0.4.0] — 2026-07-08
 
 ### Added

@@ -72,7 +72,7 @@ _INP_COMMENTS: dict = {
     },
     "isotopologue": {
         "cas_registry_number": "CAS number (optional) — lookup: https://commonchemistry.cas.org",
-        "point_group": "Symmetry group (e.g. C, Cs, C2v, Dinfh) — lookup: https://www.exomol.com",
+        "point_group": "Symmetry group (e.g. C, Cs, C2v, Dinfh)",
         "irreps": "Irreducible representations as label:degeneracy pairs (e.g. Sigma+:12, Sigma-:12)",
         "quantum_case_label": "Quantum coupling case — lookup: https://www.exomol.com/data/quantum-cases/",
     },
@@ -80,7 +80,7 @@ _INP_COMMENTS: dict = {
         "One label per line:  name  or  name = ffmt cfmt | description",
         "Standard library labels auto-fill format and description.",
         "First 4 columns are always: ID  E  gtot  J",
-        "  (change J → F for hyperfine datasets; J → N for symmetric tops)",
+        "  (manually change J → F for hyperfine datasets)",
         "Auto-detected from label names:",
         "  4th col = F   → hyperfine_resolved = true",
         "  unc           → uncertainties_available = true",
@@ -274,6 +274,17 @@ def generate_blank_inp(
             out.append(section_separator)
             out.append("")
 
+        # Auto-fill irreps for heteronuclear diatomics
+        pre_irreps = ""
+        try:
+            import extractor as _ext
+            _atoms, _ = _ext.expand_slug_atoms(iso_slug)
+            _nsd = _ext.nuclear_spin_degeneracy(iso_slug)
+            if _nsd is not None and len(_atoms) == 2 and not _nsd[1]:
+                pre_irreps = f"Sigma+:{_nsd[0]}, Sigma-:{_nsd[0]}"
+        except Exception:
+            pass
+
         out.append(f"[isotopologue.{iso_slug}]")
         if verbose:
             for field, text in _INP_COMMENTS["isotopologue"].items():
@@ -282,7 +293,7 @@ def generate_blank_inp(
         out += _align_section([
             ("cas_registry_number", ""),
             ("point_group",         ""),
-            ("irreps",              ""),
+            ("irreps",              pre_irreps),
             ("quantum_case_label",  ""),
         ])
         out.append("")
@@ -898,6 +909,38 @@ def validate_inp(inp_path: Path, known_iso_slugs: list[str]) -> tuple[list[str],
                                 f"  → Specify Fortran and C formats inline, e.g.:\n"
                                 f"  →   {name} = I5 %5d | Description here"
                             )
+
+                # Quantum label namespace validation
+                _DIATOMIC_NS_PREFIX = "hund"
+                _POLYATOMIC_NAMESPACES = {
+                    "hunda", "hundb", "TROVE", "DVR3D",
+                    "Herzberg", "AFGL", "Polyad", "EVEREST",
+                }
+                try:
+                    import extractor as _ext
+                    _atoms, _ = _ext.expand_slug_atoms(iso_slug)
+                    _is_diatomic = len(_atoms) == 2
+                    for lbl in labels[_HEADER_COUNT:]:
+                        _name = lbl["name"]
+                        if _name.startswith("Auxiliary:") or ":" not in _name:
+                            continue
+                        _ns = _name.split(":", 1)[0].strip()
+                        if _is_diatomic:
+                            if not _ns.startswith(_DIATOMIC_NS_PREFIX):
+                                errors.append(
+                                    f"[{qn_section}] label '{_name}' has namespace '{_ns}'.\n"
+                                    f"  → {iso_slug} is diatomic — only 'hund*' namespace prefixes are valid\n"
+                                    f"    (e.g. hunda:Lambda, hundb:v)."
+                                )
+                        else:
+                            if _ns not in _POLYATOMIC_NAMESPACES:
+                                errors.append(
+                                    f"[{qn_section}] label '{_name}' has unrecognised namespace '{_ns}'.\n"
+                                    f"  → Valid prefixes for polyatomic molecules:\n"
+                                    f"    {', '.join(sorted(_POLYATOMIC_NAMESPACES))}"
+                                )
+                except Exception:
+                    pass
 
                 # Soft warning: no namespaced quantum number types detected
                 flags = _auto_detect_flags(labels)
