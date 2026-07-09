@@ -101,6 +101,201 @@ def _comment_lines(key: str, text: str | list[str], key_width: int) -> list[str]
 
 
 # ---------------------------------------------------------------------------
+# Shared constants (also used in validation messages below)
+# ---------------------------------------------------------------------------
+
+_VALID_QUANTUM_CASE_LABELS: frozenset[str] = frozenset({
+    "dcs", "dos", "lpcs", "lpos", "asymcs", "asymos",
+    "stos", "stcs", "sphcs", "sphos",
+})
+
+_DIATOMIC_NS_PREFIX = "hund"
+_POLYATOMIC_NAMESPACES: frozenset[str] = frozenset({
+    "hunda", "hundb", "TROVE", "DVR3D", "Herzberg", "AFGL", "Polyad", "EVEREST",
+})
+
+# ---------------------------------------------------------------------------
+# Validation messages — edit here to change what the user sees when errors
+# or warnings are raised during build. All strings use str.format() named
+# placeholders (e.g. {slug}, {val}, {section}).
+# ---------------------------------------------------------------------------
+
+_VALIDATION_ERRORS: dict[str, str] = {
+
+    # ── [options] ────────────────────────────────────────────────────────────
+    "options.shared_quantum_labels_invalid": (
+        '[options] shared_quantum_labels = "{val}" is not a valid boolean.\n'
+        "→ Use true or false."
+    ),
+
+    # ── [dataset] ────────────────────────────────────────────────────────────
+    "dataset.missing_section": (
+        "[dataset] section is missing.\n"
+        "→ Add a [dataset] section with at minimum:\n"
+        "  doi, max_temperature, cooling_function_available,\n"
+        "  specific_heat_available, continuum"
+    ),
+    "dataset.version_date_blank": (
+        "[dataset] version_date is blank.\n"
+        "→ Enter the version date in YYYYMMDD format,\n"
+        "  e.g.:  version_date = 20240307"
+    ),
+    "dataset.version_date_invalid": (
+        '[dataset] version_date = "{val}" is not a valid date.\n'
+        "→ Use YYYYMMDD format, e.g.:  version_date = 20240307"
+    ),
+    "dataset.doi_invalid": (
+        '[dataset] doi = "{val}" does not look like a valid DOI.\n'
+        "→ DOIs start with '10.' and contain a '/',\n"
+        "  e.g.:  doi = 10.1093/mnras/stad3802\n"
+        "→ Leave blank if not yet published."
+    ),
+    "dataset.max_temperature_blank": (
+        "[dataset] max_temperature is blank.\n"
+        "→ Enter the maximum temperature in K (author-stated),\n"
+        "  e.g.:  max_temperature = 5000"
+    ),
+    "dataset.max_temperature_not_positive": (
+        "[dataset] max_temperature = {val} must be greater than 0.\n"
+        "→ Enter a positive value in K, e.g.:  max_temperature = 5000"
+    ),
+    "dataset.max_temperature_not_number": (
+        '[dataset] max_temperature = "{val}" is not a number.\n'
+        "→ Enter a numeric value in K, e.g.:  max_temperature = 5000"
+    ),
+    "dataset.bool_flag_blank": (
+        "[dataset] {flag} is blank.\n"
+        "→ Use true or false."
+    ),
+    "dataset.bool_flag_invalid": (
+        '[dataset] {flag} = "{val}" is not a valid boolean.\n'
+        "→ Use true or false."
+    ),
+    "dataset.smiles_invalid": (
+        '[dataset] smiles = "{val}" could not be parsed by RDKit.\n'
+        "→ Verify the SMILES is correct. Common issues:\n"
+        "  - Radicals need bracket atoms:  [Al][H]  not  AlH\n"
+        "  - Charges go inside brackets:   [NH4+], [O-]\n"
+        "  - Ring closures need matching digits:  C1CCCCC1"
+    ),
+
+    # ── [isotopologue.*] ─────────────────────────────────────────────────────
+    "iso.section_missing": (
+        "[isotopologue.{slug}] section is missing.\n"
+        "→ Add a section [isotopologue.{slug}] containing:\n"
+        "  point_group, irreps, quantum_case_label\n"
+        "  (cas_registry_number is optional)"
+    ),
+    "iso.point_group_blank": (
+        "[isotopologue.{slug}] point_group is blank.\n"
+        "→ Enter the symmetry group, e.g.:  point_group = C\n"
+        "  Common values: C, Cs, C2v, C3v, Td, D2h, Dinfh, Kh"
+    ),
+    "iso.irreps_blank": (
+        "[isotopologue.{slug}] irreps is blank.\n"
+        "→ Enter irreducible representations as label:degeneracy pairs,\n"
+        "  e.g.:  irreps = Sigma+:12, Sigma-:12"
+    ),
+    "iso.irreps_negative_degeneracy": (
+        "[isotopologue.{slug}] irreps '{lbl}:{deg}' — degeneracy must be a non-negative integer.\n"
+        "→ Use 0 to indicate a symmetry species with no states of that type."
+    ),
+    "iso.irreps_exceeds_gns": (
+        "[isotopologue.{slug}] irreps '{lbl}:{deg}' exceeds the nuclear spin degeneracy g_ns = {g_ns}.\n"
+        "→ g_ns = {g_ns} is the maximum for {slug} (product of (2Iᵢ+1) over all nuclei).\n"
+        "  No individual irrep degeneracy can exceed this value."
+    ),
+    "iso.irreps_wrong_for_no_equiv": (
+        "[isotopologue.{slug}] irreps '{lbl}:{deg}' — expected {g_ns}.\n"
+        "→ {slug} has no equivalent nuclei, so all irreps must have degeneracy = g_ns = {g_ns}."
+    ),
+    "iso.irreps_parse_error": (
+        '[isotopologue.{slug}] irreps = "{val}" could not be parsed: {exc}\n'
+        "→ Use colon-separated label:degeneracy pairs,\n"
+        "  e.g.:  irreps = Sigma+:12, Sigma-:12"
+    ),
+    "iso.quantum_case_label_blank": (
+        "[isotopologue.{slug}] quantum_case_label is blank.\n"
+        "→ Enter the quantum coupling case label,\n"
+        "  e.g.:  quantum_case_label = dos\n"
+        "  Valid values: {valid_cases}\n"
+        "→ See: https://www.exomol.com/data/quantum-cases/"
+    ),
+    "iso.quantum_case_label_invalid": (
+        '[isotopologue.{slug}] quantum_case_label = "{val}" is not recognised.\n'
+        "→ Valid values: {valid_cases}\n"
+        "→ See: https://www.exomol.com/data/quantum-cases/"
+    ),
+    "iso.no_matching_files": (
+        "[isotopologue.{slug}] in the .inp has no matching .states file in the working directory.\n"
+        "→ Check for a typo in the iso_slug.\n"
+        "  Data files discovered: {discovered}"
+    ),
+
+    # ── [quantum_labels.*] ───────────────────────────────────────────────────
+    "qn.section_missing": (
+        "[{section}] section is missing.\n"
+        "→ Add a section [{section}] listing states file columns one per line.\n"
+        "  The first four lines must be the standard header columns:\n"
+        "    ID\n"
+        "    E\n"
+        "    gtot\n"
+        "    J   (or F for hyperfine datasets, N for symmetric tops)"
+    ),
+    "qn.too_few_labels": (
+        "[{section}] has {count} label(s) — at least {required} are required.\n"
+        "→ The first four lines must be the standard header columns:\n"
+        "    ID\n"
+        "    E\n"
+        "    gtot\n"
+        "    J   (or F for hyperfine datasets, N for symmetric tops)"
+    ),
+    "qn.wrong_header_position": (
+        "[{section}] column {pos} is '{name}' but expected '{expected}'.\n"
+        "→ Header order must be: ID, E, gtot, then J / F / N."
+    ),
+    "qn.invalid_4th_header": (
+        "[{section}] 4th column is '{name}' — expected J, F, or N.\n"
+        "→ Use J (standard), F (hyperfine datasets), or N (symmetric tops)."
+    ),
+    "qn.auxiliary_no_format": (
+        "[{section}] Auxiliary column '{name}' is not in the standard library and has no format string.\n"
+        "→ Add Fortran and C formats (and optionally a description) inline:\n"
+        "    {name} = A2 %2s | Description here\n"
+        "  Replace A2 / %2s with the actual Fortran/C formats for '{bare}'."
+    ),
+    "qn.unknown_label_no_format": (
+        "[{section}] label '{name}' has no format string and is not in the standard library.\n"
+        "→ Specify Fortran and C formats inline, e.g.:\n"
+        "    {name} = I5 %5d | Description here"
+    ),
+    "qn.diatomic_bad_namespace": (
+        "[{section}] label '{label}' uses namespace '{ns}'.\n"
+        "→ {slug} is diatomic — only 'hund*' namespace prefixes are allowed\n"
+        "  (e.g. hunda:Lambda, hunda:Sigma, hundb:v)."
+    ),
+    "qn.polyatomic_bad_namespace": (
+        "[{section}] label '{label}' uses unrecognised namespace '{ns}'.\n"
+        "→ Valid namespace prefixes for polyatomic molecules:\n"
+        "  {valid_namespaces}"
+    ),
+}
+
+_VALIDATION_WARNINGS: dict[str, str] = {
+    "qn.no_namespaces": (
+        "[{section}] No quantum number type namespaces detected (num_quantum_types = 0).\n"
+        "→ This is valid if your labels belong to no particular coupling scheme.\n"
+        "  If they do (e.g. Hund's case a), prefix labels with the scheme name:\n"
+        "    hunda:Lambda\n"
+        "    hunda:Sigma\n"
+        "  num_quantum_types counts unique namespace prefixes.\n"
+        "→ If 0 is correct, you can ignore this warning.\n"
+        "→ See: https://www.exomol.com/data/quantum-cases/"
+    ),
+}
+
+
+# ---------------------------------------------------------------------------
 # .inp generation
 # ---------------------------------------------------------------------------
 
@@ -325,6 +520,15 @@ def generate_blank_inp(
                 out += _HEADER_LABELS
             out.append("")
             out.append("")
+
+    if verbose:
+        out += [
+            "",
+            section_separator,
+            "#  All fields filled in?",
+            "#  Run:  python create_def.py <path/to/this/directory>",
+            section_separator,
+        ]
 
     return "\n".join(out)
 
@@ -641,102 +845,67 @@ def validate_inp(inp_path: Path, known_iso_slugs: list[str]) -> tuple[list[str],
     Validates a filled .inp file for completeness and correctness.
     Collects ALL errors and soft warnings in one pass.
     Returns (errors, warnings); errors block the build, warnings are informational only.
+
+    All user-facing message strings live in _VALIDATION_ERRORS / _VALIDATION_WARNINGS above —
+    edit those dicts to change what the user sees without touching the logic here.
     """
     errors: list[str] = []
     warnings: list[str] = []
     standard_labels = _get_standard_labels()
     sections = _read_sections(inp_path)
 
-    # ------------------------------------------------------------------
-    # [options]
-    # ------------------------------------------------------------------
+    # ── [options] ────────────────────────────────────────────────────────────
     options_kv = _kv_pairs(sections.get("options", []))
     sqn_raw = options_kv.get("shared_quantum_labels", "false")
     try:
         shared_qn = _parse_bool(sqn_raw, "shared_quantum_labels")
     except ValueError:
-        errors.append(
-            f"[options] shared_quantum_labels = \"{sqn_raw}\" is not valid.\n"
-            f"  → Use true or false."
-        )
+        errors.append(_VALIDATION_ERRORS["options.shared_quantum_labels_invalid"].format(val=sqn_raw))
         shared_qn = False
 
-    # ------------------------------------------------------------------
-    # [dataset]
-    # ------------------------------------------------------------------
+    # ── [dataset] ────────────────────────────────────────────────────────────
     if "dataset" not in sections:
-        errors.append(
-            "[dataset] section is missing.\n"
-            "  → Add a [dataset] section with: doi, max_temperature,\n"
-            "    cooling_function_available, specific_heat_available, continuum."
-        )
+        errors.append(_VALIDATION_ERRORS["dataset.missing_section"])
         dataset_kv: dict[str, str] = {}
     else:
         dataset_kv = _kv_pairs(sections["dataset"])
 
         vd_val = dataset_kv.get("version_date", "").strip()
         if not vd_val:
-            errors.append(
-                "[dataset] version_date is blank.\n"
-                "  → Enter the version date, e.g.:  version_date = 20240307"
-            )
+            errors.append(_VALIDATION_ERRORS["dataset.version_date_blank"])
         else:
             try:
                 vd_int = int(vd_val)
                 if len(vd_val) != 8 or not (19000101 <= vd_int <= 99991231):
                     raise ValueError
             except ValueError:
-                errors.append(
-                    f"[dataset] version_date = \"{vd_val}\" is not a valid date.\n"
-                    f"  → Use YYYYMMDD format, e.g.:  version_date = 20240307"
-                )
+                errors.append(_VALIDATION_ERRORS["dataset.version_date_invalid"].format(val=vd_val))
 
         doi_val = dataset_kv.get("doi", "").strip()
         if doi_val and doi_val.lower() != "none" and not (doi_val.startswith("10.") and "/" in doi_val):
-            errors.append(
-                f"[dataset] doi = \"{doi_val}\" does not look like a valid DOI.\n"
-                f"  → DOIs start with '10.' and contain a '/', e.g.:  doi = 10.1093/mnras/stad3802\n"
-                f"  → Leave blank if not yet published."
-            )
+            errors.append(_VALIDATION_ERRORS["dataset.doi_invalid"].format(val=doi_val))
 
         mt_val = dataset_kv.get("max_temperature", "").strip()
         if not mt_val:
-            errors.append(
-                "[dataset] max_temperature is blank.\n"
-                "  → Enter the maximum temperature in K (author-stated),\n"
-                "    e.g.:  max_temperature = 5000"
-            )
+            errors.append(_VALIDATION_ERRORS["dataset.max_temperature_blank"])
         else:
             try:
                 mt_float = float(mt_val)
                 if mt_float <= 0:
-                    errors.append(
-                        f"[dataset] max_temperature = {mt_val} is not a positive number.\n"
-                        f"  → Temperature must be greater than 0 K, e.g.:  max_temperature = 5000"
-                    )
+                    errors.append(_VALIDATION_ERRORS["dataset.max_temperature_not_positive"].format(val=mt_val))
             except ValueError:
-                errors.append(
-                    f"[dataset] max_temperature = \"{mt_val}\" is not a number.\n"
-                    f"  → Enter a numeric value in K, e.g.:  max_temperature = 5000"
-                )
+                errors.append(_VALIDATION_ERRORS["dataset.max_temperature_not_number"].format(val=mt_val))
 
         for flag in ("cooling_function_available", "specific_heat_available", "continuum"):
             val = dataset_kv.get(flag, "").strip()
             if not val:
-                errors.append(
-                    f"[dataset] {flag} is blank.\n"
-                    f"  → Use true or false."
-                )
+                errors.append(_VALIDATION_ERRORS["dataset.bool_flag_blank"].format(flag=flag))
             else:
                 try:
                     _parse_bool(val, flag)
                 except ValueError:
-                    errors.append(
-                        f"[dataset] {flag} = \"{val}\" is not valid.\n"
-                        f"  → Use true or false."
-                    )
+                    errors.append(_VALIDATION_ERRORS["dataset.bool_flag_invalid"].format(flag=flag, val=val))
 
-    # Dataset-level SMILES / InChI validation
     smiles_ds = dataset_kv.get("smiles", "").strip()
     if smiles_ds:
         import inchi as _inchi_mod
@@ -747,56 +916,34 @@ def validate_inp(inp_path: Path, known_iso_slugs: list[str]) -> tuple[list[str],
         except ImportError:
             pass  # RDKit absent — skip validation
         if _test_mol is None and _inchi_mod is not None:
-            errors.append(
-                f"[dataset] smiles = \"{smiles_ds}\" could not be parsed by RDKit.\n"
-                f"  → Verify the SMILES is valid. Common issues:\n"
-                f"    - Radicals need bracket atoms: [Al][H] not AlH\n"
-                f"    - Charges go inside brackets: [NH4+], [O-]\n"
-                f"    - Ring closures require matching digits: C1CCCCC1"
-            )
+            errors.append(_VALIDATION_ERRORS["dataset.smiles_invalid"].format(val=smiles_ds))
 
-    # ------------------------------------------------------------------
-    # Per-isotopologue sections
-    # ------------------------------------------------------------------
+    # ── Per-isotopologue sections ─────────────────────────────────────────────
+    valid_cases_str = ", ".join(sorted(_VALID_QUANTUM_CASE_LABELS))
+
     for iso_slug in known_iso_slugs:
 
-        # [isotopologue.slug]
         iso_section = f"isotopologue.{iso_slug}"
         if iso_section not in sections:
-            errors.append(
-                f"[isotopologue.{iso_slug}] section is missing.\n"
-                f"  → Add a section [isotopologue.{iso_slug}] with:\n"
-                f"    point_group, irreps, quantum_case_label (and optionally inchi, inchikey, cas_registry_number)."
-            )
+            errors.append(_VALIDATION_ERRORS["iso.section_missing"].format(slug=iso_slug))
         else:
             iso_kv = _kv_pairs(sections[iso_section])
 
             if not iso_kv.get("point_group", "").strip():
-                errors.append(
-                    f"[isotopologue.{iso_slug}] point_group is blank.\n"
-                    f"  → Enter the symmetry group, e.g.:  point_group = C\n"
-                    f"    (common values: C, Cs, C2v, C3v, Td, D2h, Dinfh, Kh)"
-                )
+                errors.append(_VALIDATION_ERRORS["iso.point_group_blank"].format(slug=iso_slug))
 
             irreps_val = iso_kv.get("irreps", "").strip()
             if not irreps_val:
-                errors.append(
-                    f"[isotopologue.{iso_slug}] irreps is blank.\n"
-                    f"  → Enter irreducible representations as label:degeneracy pairs,\n"
-                    f"    e.g.:  irreps = Sigma+:12, Sigma-:12"
-                )
+                errors.append(_VALIDATION_ERRORS["iso.irreps_blank"].format(slug=iso_slug))
             else:
                 try:
                     parsed_irreps = _parse_irreps(irreps_val)
-                    bad_degs = [(lbl, deg) for lbl, deg in parsed_irreps.items() if deg < 0]
-                    if bad_degs:
-                        for lbl, deg in bad_degs:
-                            errors.append(
-                                f"[isotopologue.{iso_slug}] irreps '{lbl}' has degeneracy {deg} — must be a non-negative integer.\n"
-                                f"  → e.g.:  irreps = Sigma+:12, Sigma-:12"
-                            )
+                    for lbl, deg in parsed_irreps.items():
+                        if deg < 0:
+                            errors.append(_VALIDATION_ERRORS["iso.irreps_negative_degeneracy"].format(
+                                slug=iso_slug, lbl=lbl, deg=deg
+                            ))
 
-                    # Nuclear spin degeneracy check
                     try:
                         import extractor as _ext
                         nsd = _ext.nuclear_spin_degeneracy(iso_slug)
@@ -804,63 +951,43 @@ def validate_inp(inp_path: Path, known_iso_slugs: list[str]) -> tuple[list[str],
                             g_ns, has_equiv = nsd
                             for lbl, deg in parsed_irreps.items():
                                 if deg > g_ns:
-                                    errors.append(
-                                        f"[isotopologue.{iso_slug}] irreps '{lbl}:{deg}' exceeds g_ns = {g_ns}.\n"
-                                        f"  g_ns = Π(2Iᵢ+1) = {g_ns} is the maximum possible nuclear spin degeneracy for {iso_slug}.\n"
-                                        f"  No individual irrep degeneracy can exceed this."
-                                    )
+                                    errors.append(_VALIDATION_ERRORS["iso.irreps_exceeds_gns"].format(
+                                        slug=iso_slug, lbl=lbl, deg=deg, g_ns=g_ns
+                                    ))
                             if not has_equiv:
-                                wrong = [(lbl, deg) for lbl, deg in parsed_irreps.items() if deg != g_ns]
-                                for lbl, deg in wrong:
-                                    errors.append(
-                                        f"[isotopologue.{iso_slug}] irreps '{lbl}:{deg}' — expected {g_ns}.\n"
-                                        f"  {iso_slug} has no equivalent nuclei, so g_ns = Π(2Iᵢ+1) = {g_ns} for every irrep."
-                                    )
+                                for lbl, deg in parsed_irreps.items():
+                                    if deg != g_ns:
+                                        errors.append(_VALIDATION_ERRORS["iso.irreps_wrong_for_no_equiv"].format(
+                                            slug=iso_slug, lbl=lbl, deg=deg, g_ns=g_ns
+                                        ))
                     except Exception:
-                        pass  # don't let the check block the build if extractor is unavailable
+                        pass
 
                 except ValueError as exc:
-                    errors.append(
-                        f"[isotopologue.{iso_slug}] irreps = \"{irreps_val}\" could not be parsed: {exc}\n"
-                        f"  → Use colon-separated label:degeneracy pairs,\n"
-                        f"    e.g.:  irreps = Sigma+:12, Sigma-:12"
-                    )
+                    errors.append(_VALIDATION_ERRORS["iso.irreps_parse_error"].format(
+                        slug=iso_slug, val=irreps_val, exc=exc
+                    ))
 
-            _VALID_CASE_LABELS = {
-                "dcs", "dos", "lpcs", "lpos", "asymcs", "asymos",
-                "stos", "stcs", "sphcs", "sphos",
-            }
             qcl_val = iso_kv.get("quantum_case_label", "").strip()
             if not qcl_val:
-                errors.append(
-                    f"[isotopologue.{iso_slug}] quantum_case_label is blank.\n"
-                    f"  → Enter the quantum coupling case label,\n"
-                    f"    e.g.:  quantum_case_label = dos\n"
-                    f"    (valid values: {', '.join(sorted(_VALID_CASE_LABELS))})"
-                )
-            elif qcl_val not in _VALID_CASE_LABELS:
-                errors.append(
-                    f"[isotopologue.{iso_slug}] quantum_case_label = \"{qcl_val}\" is not a recognised case label.\n"
-                    f"  → Valid values: {', '.join(sorted(_VALID_CASE_LABELS))}"
-                )
+                errors.append(_VALIDATION_ERRORS["iso.quantum_case_label_blank"].format(
+                    slug=iso_slug, valid_cases=valid_cases_str
+                ))
+            elif qcl_val not in _VALID_QUANTUM_CASE_LABELS:
+                errors.append(_VALIDATION_ERRORS["iso.quantum_case_label_invalid"].format(
+                    slug=iso_slug, val=qcl_val, valid_cases=valid_cases_str
+                ))
 
-        # [quantum_labels.slug] (or shared [quantum_labels])
+        # ── [quantum_labels.*] ───────────────────────────────────────────────
         if shared_qn:
             qn_section = "quantum_labels" if "quantum_labels" in sections else next(
                 (k for k in sections if k.startswith("quantum_labels.")), "quantum_labels"
             )
         else:
             qn_section = f"quantum_labels.{iso_slug}"
+
         if qn_section not in sections:
-            errors.append(
-                f"[{qn_section}] section is missing.\n"
-                f"  → Add a section [{qn_section}] listing states file columns one per line.\n"
-                f"  → The first four lines must be the header columns:\n"
-                f"    ID\n"
-                f"    E\n"
-                f"    gtot\n"
-                f"    J   ← or F for hyperfine datasets, N for symmetric tops"
-            )
+            errors.append(_VALIDATION_ERRORS["qn.section_missing"].format(section=qn_section))
         else:
             labels = [
                 lbl for line in sections[qn_section]
@@ -868,54 +995,36 @@ def validate_inp(inp_path: Path, known_iso_slugs: list[str]) -> tuple[list[str],
             ]
 
             if len(labels) < _HEADER_COUNT:
-                errors.append(
-                    f"[{qn_section}] has {len(labels)} label(s) — at least {_HEADER_COUNT} required.\n"
-                    f"  → The first four lines must be the header columns:\n"
-                    f"    ID\n"
-                    f"    E\n"
-                    f"    gtot\n"
-                    f"    J   ← or F for hyperfine datasets, N for symmetric tops"
-                )
+                errors.append(_VALIDATION_ERRORS["qn.too_few_labels"].format(
+                    section=qn_section, count=len(labels), required=_HEADER_COUNT
+                ))
             else:
                 for i, expected in enumerate(("ID", "E", "gtot")):
                     if labels[i]["name"] != expected:
-                        errors.append(
-                            f"[{qn_section}] position {i + 1} is '{labels[i]['name']}' but expected '{expected}'.\n"
-                            f"  → Header order must be: ID, E, gtot, then J / F / N."
-                        )
+                        errors.append(_VALIDATION_ERRORS["qn.wrong_header_position"].format(
+                            section=qn_section, pos=i + 1, name=labels[i]["name"], expected=expected
+                        ))
 
                 fourth = labels[3]["name"]
                 if fourth not in _VALID_4TH_HEADERS:
-                    errors.append(
-                        f"[{qn_section}] 4th column is '{fourth}' — expected J, F, or N.\n"
-                        f"  → Use J (standard), F (hyperfine datasets), or N (symmetric tops)."
-                    )
+                    errors.append(_VALIDATION_ERRORS["qn.invalid_4th_header"].format(
+                        section=qn_section, name=fourth
+                    ))
 
                 for lbl in labels:
                     name = lbl["name"]
                     if name.startswith("Auxiliary:"):
                         if not lbl.get("ffmt") or not lbl.get("cfmt"):
                             bare = name.split(":", 1)[1]
-                            errors.append(
-                                f"[{qn_section}] Auxiliary column '{name}' is not in the standard library and has no format string.\n"
-                                f"  → Specify Fortran and C formats (and optionally a description) inline:\n"
-                                f"  →   {name} = A2 %2s | Description here\n"
-                                f"    (replace A2 / %2s with the actual formats for '{bare}')"
-                            )
+                            errors.append(_VALIDATION_ERRORS["qn.auxiliary_no_format"].format(
+                                section=qn_section, name=name, bare=bare
+                            ))
                     elif name not in {"ID", "E", "gtot"} and name not in _VALID_4TH_HEADERS:
                         if not lbl.get("ffmt") or not lbl.get("cfmt"):
-                            errors.append(
-                                f"[{qn_section}] label '{name}' has no format string and is not in the standard library.\n"
-                                f"  → Specify Fortran and C formats inline, e.g.:\n"
-                                f"  →   {name} = I5 %5d | Description here"
-                            )
+                            errors.append(_VALIDATION_ERRORS["qn.unknown_label_no_format"].format(
+                                section=qn_section, name=name
+                            ))
 
-                # Quantum label namespace validation
-                _DIATOMIC_NS_PREFIX = "hund"
-                _POLYATOMIC_NAMESPACES = {
-                    "hunda", "hundb", "TROVE", "DVR3D",
-                    "Herzberg", "AFGL", "Polyad", "EVEREST",
-                }
                 try:
                     import extractor as _ext
                     _atoms, _ = _ext.expand_slug_atoms(iso_slug)
@@ -927,48 +1036,32 @@ def validate_inp(inp_path: Path, known_iso_slugs: list[str]) -> tuple[list[str],
                         _ns = _name.split(":", 1)[0].strip()
                         if _is_diatomic:
                             if not _ns.startswith(_DIATOMIC_NS_PREFIX):
-                                errors.append(
-                                    f"[{qn_section}] label '{_name}' has namespace '{_ns}'.\n"
-                                    f"  → {iso_slug} is diatomic — only 'hund*' namespace prefixes are valid\n"
-                                    f"    (e.g. hunda:Lambda, hundb:v)."
-                                )
+                                errors.append(_VALIDATION_ERRORS["qn.diatomic_bad_namespace"].format(
+                                    section=qn_section, label=_name, ns=_ns, slug=iso_slug
+                                ))
                         else:
                             if _ns not in _POLYATOMIC_NAMESPACES:
-                                errors.append(
-                                    f"[{qn_section}] label '{_name}' has unrecognised namespace '{_ns}'.\n"
-                                    f"  → Valid prefixes for polyatomic molecules:\n"
-                                    f"    {', '.join(sorted(_POLYATOMIC_NAMESPACES))}"
-                                )
+                                errors.append(_VALIDATION_ERRORS["qn.polyatomic_bad_namespace"].format(
+                                    section=qn_section, label=_name, ns=_ns,
+                                    valid_namespaces=", ".join(sorted(_POLYATOMIC_NAMESPACES))
+                                ))
                 except Exception:
                     pass
 
-                # Soft warning: no namespaced quantum number types detected
                 flags = _auto_detect_flags(labels)
                 if flags["num_quantum_types"] == 0:
-                    warnings.append(
-                        f"[{qn_section}] No quantum number type namespaces detected (num_quantum_types = 0).\n"
-                        f"  This is valid if all labels are generally well-defined, but if your labels belong to a coupling\n"
-                        f"  scheme (e.g. Hund's case a), prefix them with the case name:\n"
-                        f"    hunda:Lambda\n"
-                        f"    hunda:Sigma\n"
-                        f"  If num_quantum_types = 0 is intentional, you can ignore this and continue building."
-                        f"  For more information on quantum number types, read the documentation at https://www.exomol.com/data/quantum-cases/"
-                    )
+                    warnings.append(_VALIDATION_WARNINGS["qn.no_namespaces"].format(section=qn_section))
 
-        # Only validate shared quantum_labels once (for the first iso_slug)
         if shared_qn:
             break
 
-    # ------------------------------------------------------------------
-    # Warn about .inp isotopologue sections with no matching directory
-    # ------------------------------------------------------------------
+    # ── Orphaned isotopologue sections ───────────────────────────────────────
     for section_name in sections:
         if section_name.startswith("isotopologue."):
             slug = section_name[len("isotopologue."):]
             if slug not in known_iso_slugs:
-                errors.append(
-                    f"[isotopologue.{slug}] in the .inp file has no matching directory.\n"
-                    f"  → Check for typos — isotopologue directories found: {', '.join(known_iso_slugs) or 'none'}"
-                )
+                errors.append(_VALIDATION_ERRORS["iso.no_matching_files"].format(
+                    slug=slug, discovered=", ".join(known_iso_slugs) or "none"
+                ))
 
     return errors, warnings

@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.5.1] — 2026-07-09
+
+### Added
+- **Extraction progress output** — `--init` prints `Extracting data for N isotopologue(s)...` with a per-isotopologue `  <iso_slug>... done` line as each file is read, so the user can see progress during large file processing
+- **"Next steps" footer in `.inp`** — generated `.inp` files end with a comment block reminding the user what command to run after filling in the file
+- **Batch temp cache check in build** — `run_build` now checks that all temp `.def.json` cache files exist before starting any render work, listing every missing file at once rather than halting on the first one mid-loop
+- **`--force` "nothing to remove" feedback** — if `--init --force` finds no existing `.inp` or temp cache files, it now prints a confirmation instead of silently continuing
+
+### Changed
+- **Centralized validation message strings** — all user-facing error and warning text is now collected in `_VALIDATION_ERRORS` and `_VALIDATION_WARNINGS` dicts at the top of `inp_handler.py`, and `_VALIDATOR_ERRORS` at the top of `validator.py`; logic in `validate_inp` and `validate_iso_files` calls `.format()` on these strings rather than embedding them inline — edit messages without touching validation logic
+- **`--init` completion summary** rewritten to print dataset name, isotopologue list, temp cache paths one per line, and explicit numbered "Next steps" rather than a Python list repr
+- **`quantum_case_label` validation errors** now include a link to `https://www.exomol.com/data/quantum-cases/`
+- **`run_build` error/warning display** extracted into a shared `_print_errors()` helper in `context.py`
+
+### Fixed
+- **Error display double-indent** — validation error continuation lines (hints starting with `→`) were being indented twice; messages in `_VALIDATION_ERRORS` no longer carry leading whitespace, so the display loop's 5-space prefix produces consistent single-level indentation
+- **Broken warning sentence** — the `num_quantum_types = 0` soft warning had two sentences concatenated without a newline separator, causing them to run together on one line
+
 ## [0.5.0] — 2026-07-09
 
 ### Changed

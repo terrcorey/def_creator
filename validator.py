@@ -10,6 +10,48 @@ class ValidationError(Exception):
     pass
 
 
+# ---------------------------------------------------------------------------
+# File validation messages — edit here to change what the user sees when
+# file-structure or naming errors are detected. All strings use str.format()
+# named placeholders (e.g. {work_dir}, {slug}, {ds_name}).
+# ---------------------------------------------------------------------------
+
+_VALIDATOR_ERRORS: dict[str, str] = {
+    "discover.not_dir": (
+        "Work directory '{work_dir}' does not exist."
+    ),
+    "discover.no_files": (
+        "No isotopologue data files found in '{work_dir}'.\n"
+        "→ Expected files named '<iso_slug>__<ds_name>.states'\n"
+        "  (e.g. '27Al-1H__AloHa.states')."
+    ),
+    "discover.multiple_names": (
+        "Multiple dataset names detected in '{work_dir}': {names}.\n"
+        "→ All files in a working directory must belong to the same dataset.\n"
+        "  Rename files so they all share the same <ds_name>."
+    ),
+    "iso.wrong_states_count": (
+        "Expected exactly 1 .states file for '{slug}', found {count}: {names}"
+    ),
+    "iso.wrong_pf_count": (
+        "Expected exactly 1 .pf file for '{slug}', found {count}: {names}.\n"
+        "→ Expected name: '{slug}__{ds_name}.pf'"
+    ),
+    "iso.no_trans": (
+        "No .trans file found for '{slug}'.\n"
+        "→ Expected at least one file matching: '{slug}__{ds_name}[__<range>].trans[.bz2]'"
+    ),
+    "spot_check.states_too_few_cols": (
+        "'{name}' has {count} columns, expected ≥ 4.\n"
+        "→ Required columns (in order): ID, E, gtot, J (or F for hyperfine datasets)"
+    ),
+    "spot_check.trans_too_few_cols": (
+        "'{name}' has {count} columns, expected ≥ 3.\n"
+        "→ Required columns (in order): upper state ID, lower state ID, Einstein A coefficient"
+    ),
+}
+
+
 def _open_for_check(path: Path, tmpdir: str) -> Path:
     """Decompress .bz2 to tmpdir if needed; return a readable path."""
     if path.suffix == ".bz2":
@@ -25,8 +67,9 @@ def _spot_check_states(path: Path) -> None:
     df = pd.read_csv(path, sep=r"\s+", header=None, nrows=5)
     if len(df.columns) < 4:
         raise ValidationError(
-            f"'{path.name}' has {len(df.columns)} columns, expected ≥ 4 "
-            "(ID, E, gtot, J(F if hyperfine) are required)"
+            _VALIDATOR_ERRORS["spot_check.states_too_few_cols"].format(
+                name=path.name, count=len(df.columns)
+            )
         )
     logging.debug(f"validator: '{path.name}' spot-check OK ({len(df.columns)} columns)")
 
@@ -35,8 +78,9 @@ def _spot_check_trans(path: Path) -> None:
     df = pd.read_csv(path, sep=r"\s+", header=None, nrows=5)
     if len(df.columns) < 3:
         raise ValidationError(
-            f"'{path.name}' has {len(df.columns)} columns, expected ≥ 3 "
-            "(upper state ID, lower state ID, Einstein A are required)"
+            _VALIDATOR_ERRORS["spot_check.trans_too_few_cols"].format(
+                name=path.name, count=len(df.columns)
+            )
         )
     logging.debug(f"validator: '{path.name}' spot-check OK ({len(df.columns)} columns)")
 
@@ -71,7 +115,7 @@ def discover_dataset(work_dir: Path) -> tuple[str, list[str]]:
     found, or files from multiple dataset names are detected.
     """
     if not work_dir.is_dir():
-        raise ValidationError(f"Work directory '{work_dir}' does not exist")
+        raise ValidationError(_VALIDATOR_ERRORS["discover.not_dir"].format(work_dir=work_dir))
 
     ds_names: set[str] = set()
     iso_slugs: set[str] = set()
@@ -93,15 +137,12 @@ def discover_dataset(work_dir: Path) -> tuple[str, list[str]]:
             iso_slugs.add(iso_slug)
 
     if not iso_slugs:
-        raise ValidationError(
-            f"No isotopologue data files found in '{work_dir}'. "
-            "Expected files named '<iso_slug>__<ds_name>.states' "
-            "(e.g. '27Al-1H__AloHa.states')."
-        )
+        raise ValidationError(_VALIDATOR_ERRORS["discover.no_files"].format(work_dir=work_dir))
     if len(ds_names) > 1:
         raise ValidationError(
-            f"Multiple dataset names detected in '{work_dir}': {sorted(ds_names)}. "
-            "All files in a working directory must belong to the same dataset."
+            _VALIDATOR_ERRORS["discover.multiple_names"].format(
+                work_dir=work_dir, names=", ".join(sorted(ds_names))
+            )
         )
 
     ds_name = ds_names.pop()
@@ -112,7 +153,7 @@ def discover_dataset(work_dir: Path) -> tuple[str, list[str]]:
 def validate_work_dir(work_dir: Path) -> None:
     """Confirms work_dir exists and is a directory."""
     if not work_dir.is_dir():
-        raise ValidationError(f"Work directory '{work_dir}' does not exist")
+        raise ValidationError(_VALIDATOR_ERRORS["discover.not_dir"].format(work_dir=work_dir))
 
 
 def validate_iso_files(work_dir: Path, iso_slug: str, ds_name: str) -> None:
@@ -133,19 +174,22 @@ def validate_iso_files(work_dir: Path, iso_slug: str, ds_name: str) -> None:
 
     if len(states_all) != 1:
         raise ValidationError(
-            f"Expected exactly 1 .states file for '{iso_slug}', "
-            f"found {len(states_all)}: {[p.name for p in states_all]}"
+            _VALIDATOR_ERRORS["iso.wrong_states_count"].format(
+                slug=iso_slug, count=len(states_all),
+                names=", ".join(p.name for p in states_all) or "none"
+            )
         )
     if len(pf_all) != 1:
         raise ValidationError(
-            f"Expected exactly 1 .pf file for '{iso_slug}', "
-            f"found {len(pf_all)}: {[p.name for p in pf_all]}. "
-            f"Expected name: '{iso_slug}__{ds_name}.pf'"
+            _VALIDATOR_ERRORS["iso.wrong_pf_count"].format(
+                slug=iso_slug, count=len(pf_all),
+                names=", ".join(p.name for p in pf_all) or "none",
+                ds_name=ds_name,
+            )
         )
     if len(trans_all) < 1:
         raise ValidationError(
-            f"Expected at least 1 .trans file for '{iso_slug}', found 0. "
-            f"Expected naming: '{iso_slug}__{ds_name}[__<range>].trans[.bz2]'"
+            _VALIDATOR_ERRORS["iso.no_trans"].format(slug=iso_slug, ds_name=ds_name)
         )
 
     with tempfile.TemporaryDirectory() as tmpdir:

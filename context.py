@@ -42,6 +42,16 @@ class DefContext:
         return self.work_dir / f"{iso_slug}__{self.ds_name}.def"
 
 
+def _print_errors(items: list[str], label: str) -> None:
+    """Prints a numbered list of validation errors or warnings with consistent indentation."""
+    for i, msg in enumerate(items, 1):
+        lines = msg.split("\n")
+        print(f"  {i}. {lines[0]}")
+        for line in lines[1:]:
+            print(f"     {line}")
+        print()
+
+
 def run_init(ctx: DefContext, verbose_input: bool = True, force: bool = False) -> None:
     """
     --init workflow:
@@ -55,17 +65,23 @@ def run_init(ctx: DefContext, verbose_input: bool = True, force: bool = False) -
 
     # If --force, remove existing .inp and temp caches before regenerating
     if force:
+        removed = 0
         inp_path = ctx.inp_path()
         if inp_path.exists():
             inp_path.unlink()
             logging.info(f"context: --force: removed '{inp_path}'")
-            print(f"  Removed existing: {inp_path}")
+            print(f"  Removed: {inp_path}")
+            removed += 1
         for iso_slug in ctx.isotopologue_slugs():
             temp_path = ctx.def_json_temp_path(iso_slug)
             if temp_path.exists():
                 temp_path.unlink()
                 logging.info(f"context: --force: removed '{temp_path}'")
-                print(f"  Removed existing: {temp_path}")
+                print(f"  Removed: {temp_path}")
+                removed += 1
+        if removed == 0:
+            print("  (Nothing to remove — no existing .inp or temp cache files found.)")
+        print()
 
     # Step 1: validate files for each isotopologue
     for iso_slug in ctx.isotopologue_slugs():
@@ -73,6 +89,9 @@ def run_init(ctx: DefContext, verbose_input: bool = True, force: bool = False) -
             validator.validate_iso_files(ctx.work_dir, iso_slug, ctx.ds_name)
         except ValidationError as e:
             logging.error(f"context: validation failed for '{iso_slug}': {e}")
+            print(f"\nValidation error for '{iso_slug}':")
+            for line in str(e).split("\n"):
+                print(f"  {line}")
             sys.exit(1)
 
     # Step 2 & 3: extract and cache
@@ -95,8 +114,11 @@ def run_init(ctx: DefContext, verbose_input: bool = True, force: bool = False) -
 
     extracted: dict[str, dict] = {}
     states_summaries: dict[str, dict] = {}
+    n = len(iso_slugs_all)
 
+    print(f"Extracting data for {n} isotopologue(s)...")
     for iso_slug in ctx.isotopologue_slugs():
+        print(f"  {iso_slug}...", end="", flush=True)
         logging.info(f"context: extracting data for '{iso_slug}'")
         data = extractor.extract_all(iso_slug, ctx.work_dir, ctx.ds_name)
         extracted[iso_slug] = data
@@ -111,8 +133,10 @@ def run_init(ctx: DefContext, verbose_input: bool = True, force: bool = False) -
         states_summaries[iso_slug] = extractor.summarise_states_columns(
             ctx.work_dir, iso_slug, ctx.ds_name
         )
+        print(" done")
 
     # Step 5: generate .inp
+    print()
     content = inp_handler.generate_blank_inp(
         ds_name=ctx.ds_name,
         iso_slugs=ctx.isotopologue_slugs(),
@@ -125,24 +149,35 @@ def run_init(ctx: DefContext, verbose_input: bool = True, force: bool = False) -
     inp_path = ctx.inp_path()
     if inp_path.exists():
         logging.warning(f"context: '{inp_path}' already exists — skipping (use --force to overwrite)")
-        print(f"\n  (Skipped writing '{inp_path}' — already exists; use --init --force to overwrite.)")
+        print(f"  Skipped: '{inp_path.name}' already exists (use --init --force to overwrite)")
     else:
         inp_handler.write_inp(content, inp_path)
+        print(f"  Written: {inp_path}")
 
-    print(f"\n--init complete.")
-    print(f"  Temp cache: {[str(ctx.def_json_temp_path(s)) for s in ctx.isotopologue_slugs()]}")
-    print(f"  Input template: {ctx.inp_path()}")
-    print(f"\nFill in '{ctx.inp_path()}' and run again without --init to generate .def files.")
+    print()
+    print("--init complete.")
+    print()
+    n_iso = len(ctx.isotopologue_slugs())
+    print(f"  Dataset:  {ctx.ds_name}")
+    print(f"  Isotopologues ({n_iso}): {', '.join(ctx.isotopologue_slugs())}")
+    print()
+    print("  Temp cache files written:")
+    for s in ctx.isotopologue_slugs():
+        print(f"    {ctx.def_json_temp_path(s)}")
+    print()
+    print("  Next steps:")
+    print(f"  1. Fill in '{inp_path.name}'")
+    print(f"  2. Run: python create_def.py {ctx.work_dir}")
+    print()
 
 
 def run_build(ctx: DefContext, format_name: str = "exomol") -> None:
     """
     Standard (no --init) workflow:
-      1. Parse .inp file
-      2. Validate .inp content
-      3. For each isotopologue: load .def.json temp cache, merge with user input, validate completeness
-      4. Optionally derive InChI/InChIKey from SMILES
-      5. Render .def file
+      1. Parse and validate .inp file
+      2. For each isotopologue: load .def.json temp cache, merge with user input, validate completeness
+      3. Optionally derive InChI/InChIKey from SMILES
+      4. Render .def file
     """
     logging.info(f"context: run_build for '{ctx.work_dir}' (ds_name='{ctx.ds_name}')")
 
@@ -153,57 +188,52 @@ def run_build(ctx: DefContext, format_name: str = "exomol") -> None:
             f"context: input file '{inp_path}' not found. "
             f"Run with --init first to generate it."
         )
+        print(f"\nInput file not found: {inp_path}")
+        print(f"  → Run '--init' first to generate it.")
         sys.exit(1)
 
-    # Step 1: parse .inp
+    # Check all temp caches exist before doing any work
+    missing_caches = [
+        iso_slug for iso_slug in ctx.isotopologue_slugs()
+        if not ctx.def_json_temp_path(iso_slug).exists()
+    ]
+    if missing_caches:
+        print(f"\n{len(missing_caches)} temp cache file(s) missing — run '--init' first:")
+        for slug in missing_caches:
+            print(f"  (missing) {ctx.def_json_temp_path(slug)}")
+        sys.exit(1)
+
+    # Parse .inp
     parsed = inp_handler.parse_inp(inp_path)
     dataset_user = parsed["dataset"]
     per_iso_user = parsed["per_isotopologue"]
 
-    # Step 1b: validate .inp content (collect all errors before proceeding)
+    # Validate .inp content — collect all errors before proceeding
     known_iso_slugs = ctx.isotopologue_slugs()
     inp_errors, inp_warnings = inp_handler.validate_inp(inp_path, known_iso_slugs)
 
     if inp_warnings:
         print(f"\nNote — {len(inp_warnings)} thing(s) to verify in {inp_path.name}:\n")
-        for i, warn in enumerate(inp_warnings, 1):
-            lines = warn.split("\n")
-            print(f"  {i}. {lines[0]}")
-            for line in lines[1:]:
-                print(f"     {line}")
-            print()
+        _print_errors(inp_warnings, "warning")
         answer = input("Continue with build? [y/N] ").strip().lower()
         if answer != "y":
             print("Build cancelled.")
             sys.exit(0)
 
     if inp_errors:
-        count = len(inp_errors)
-        print(f"\nErrors in {inp_path.name} — {count} problem(s) found:\n")
-        for i, err in enumerate(inp_errors, 1):
-            lines = err.split("\n")
-            print(f"  {i}. {lines[0]}")
-            for line in lines[1:]:
-                print(f"     {line}")
-            print()
+        print(f"\n{len(inp_errors)} error(s) in {inp_path.name}:\n")
+        _print_errors(inp_errors, "error")
         print("Fix the above and re-run.")
         sys.exit(1)
 
-    # Step 2–5: merge, validate, render per isotopologue
+    # Merge, validate, render per isotopologue
     rend = renderer.get_renderer(format_name)
-    any_missing = False
+    any_failed = False
 
     for iso_slug in ctx.isotopologue_slugs():
         logging.info(f"context: building '{iso_slug}'")
 
-        # Load temp cache written by --init
         temp_path = ctx.def_json_temp_path(iso_slug)
-        if not temp_path.exists():
-            logging.error(
-                f"context: temp cache '{temp_path}' not found. "
-                f"Run with --init first."
-            )
-            sys.exit(1)
         with open(temp_path, "r", encoding="utf-8") as f:
             auto_data = json.load(f)
 
@@ -236,7 +266,7 @@ def run_build(ctx: DefContext, format_name: str = "exomol") -> None:
                 f"context: '{iso_slug}' is missing required fields:\n"
                 + "\n".join(f"  - {m}" for m in missing)
             )
-            any_missing = True
+            any_failed = True
             continue
 
         # Render
@@ -247,7 +277,7 @@ def run_build(ctx: DefContext, format_name: str = "exomol") -> None:
             print(f"  Wrote: {output_path}")
         except Exception as e:
             logging.error(f"context: render failed for '{iso_slug}': {e}")
-            any_missing = True
+            any_failed = True
             continue
 
         # Write completed .def.json and remove temp file
@@ -258,7 +288,7 @@ def run_build(ctx: DefContext, format_name: str = "exomol") -> None:
         logging.info(f"context: wrote '{final_json_path}', removed temp '{temp_path}'")
         print(f"  Wrote: {final_json_path}")
 
-    if any_missing:
+    if any_failed:
         logging.error("context: build completed with errors — see log for details")
         sys.exit(1)
     else:
