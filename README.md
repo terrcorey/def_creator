@@ -2,6 +2,39 @@
 
 Generates ExoMol `.def` and `.def.json` definition files from a molecular line list dataset.
 
+## Installation
+
+Requires Python 3.9+.
+
+**Linux / macOS**
+
+```bash
+cd def_creator
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+```
+
+**Windows (PowerShell)**
+
+```powershell
+cd def_creator
+python -m venv .venv
+.venv\Scripts\Activate.ps1
+pip install -r requirements.txt
+```
+
+**Windows (Command Prompt)**
+
+```cmd
+cd def_creator
+python -m venv .venv
+.venv\Scripts\activate.bat
+pip install -r requirements.txt
+```
+
+Remember to activate the virtual environment (`source .venv/bin/activate` on Linux/macOS, `.venv\Scripts\activate` on Windows) in each new terminal session before running `create_def.py`.
+
 ## Quick start
 
 ```bash

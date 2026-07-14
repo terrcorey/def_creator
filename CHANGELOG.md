@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.5.2] — 2026-07-14 — Fixed bug that appeared in ExoTea
+
+### Added
+- **Installation instructions in README** — Quick start guide now includes venv setup and `pip install -r requirements.txt` steps for Linux, macOS, and Windows
+
+### Fixed
+- **`rdkit` missing from `requirements.txt`** — added; it's imported directly in `inchi.py` but was absent from the pinned dependency list
+
 ## [0.5.1] — 2026-07-09
 
 ### Added
