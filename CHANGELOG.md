@@ -1,5 +1,26 @@
 # Changelog
 
+## Goals for next session
+
+1. **CAS registry number auto-fill** — use `PyComChem` (CommonChemistry API) to look up `cas_registry_number` per isotopologue, at build time in `context.run_build` alongside the existing `derive_iso_inchi` call (queried by the same base SMILES/InChI). Falls back to blank/manual entry if the lookup fails or is offline, same as SMILES auto-derivation does today for polyatomics. Note: `cas`/`casregnum`/`chemformula` only validate/format a CAS number you already have — they don't look one up; `PyComChem` is the one that actually queries by formula/SMILES.
+2. **Cross-platform CI smoke test** — GitHub Actions matrix (`ubuntu-latest` / `windows-latest` / `macos-latest` × Python 3.12, on push/PR to `main`) running `--init` + build against `samples/COmet` and `samples/AloHa/27Al-1H`. Strict diff against the committed `samples/AloHa/27Al-1H/ref/*.def`/`*.def.json`; COmet checked for clean exit only (no committed reference yet). Directly validates this session's 0.5.3 fixes on real Windows/macOS runners instead of Linux-side simulation.
+
+## [0.5.3] — 2026-07-14 — Windows/macOS compatibility pass
+
+### Fixed
+- **Missing `encoding="utf-8"` on text file opens in `extractor.py`** — `extract_states_info`, `_load_state_energies`, and `extract_transitions_info` opened `.states`/`.trans` files without an explicit encoding, falling back to the platform's locale-preferred encoding (typically not UTF-8 on Windows); a non-ASCII byte in a data file that read fine on Linux could raise `UnicodeDecodeError` on Windows
+- **UTF-8 BOM breaks `.inp` parsing on Windows** — `inp_handler._read_sections` now opens with `encoding="utf-8-sig"`; previously, a BOM added by a Windows text editor on save would prepend `﻿` to the first line, causing the first `[section]` header to go undetected and be reported as a missing section
+- **No `.gitattributes`** — added, marking `.bz2`/`.states`/`.trans`/`.pf` as binary as a backstop against Git's `core.autocrlf` (default on Windows) corrupting them on checkout
+
+### Changed
+- **Removed the single-implementation renderer registry** — `renderer.py`'s `BaseRenderer` ABC, `REGISTRY`, and `get_renderer()` factory existed for exactly one format (ExoMol); replaced with a plain `render()` function. The now-pointless `--format` CLI flag was dropped from `create_def.py`/`context.py`/README along with it
+- **Deduplicated file-discovery and `.bz2`-decompression helpers** — `_data_files`/`_open_maybe_bz2` were defined identically in both `validator.py` and `extractor.py`; `extractor.py` now imports them from `validator.py`
+- **Deduplicated the diacritic-stripping helper** — `renderer._to_ascii` and `inp_handler`'s local `_ascii` closure were identical; consolidated into `config.to_ascii()`, used by both
+- **Simplified `slug_to_formula`** — replaced a 20-line char-list reverse/insert/reverse routine with a short `rstrip`-based helper; verified against known slug shapes (`27Al-1H`, `12C-16O2`, `12C-16O_p`, etc.)
+- **Removed dead code in `merger.py`** — `_set_nested()` was defined but never called; `_REQUIRED_PATHS` had a duplicate `("dataset", "states", "max_energy")` entry
+
+Verified by running the full `--init` → build pipeline against the `COmet` sample end-to-end: output `.def` is byte-identical to the committed reference, and a BOM-prefixed `.inp` now builds successfully (previously would misreport a missing `[options]` section).
+
 ## [0.5.2] — 2026-07-14 — Fixed bug that appeared in ExoTea
 
 ### Added

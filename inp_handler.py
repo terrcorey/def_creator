@@ -8,7 +8,6 @@ The .inp format is an INI-style plain text file with [section] headers and key =
 """
 import json
 import logging
-import unicodedata
 from datetime import date
 from pathlib import Path
 
@@ -27,15 +26,13 @@ def _get_standard_labels() -> dict[str, dict]:
     global _standard_labels
     if _standard_labels is not None:
         return _standard_labels
-    def _ascii(s: str) -> str:
-        return unicodedata.normalize("NFKD", s).encode("ascii", errors="ignore").decode("ascii")
 
     try:
         path = config.standard_labels_path()
         with open(path, "r", encoding="utf-8") as f:
             raw: list[dict] = json.load(f)
         _standard_labels = {
-            entry["Quantum label"]: {k: _ascii(v) if isinstance(v, str) else v for k, v in entry.items()}
+            entry["Quantum label"]: {k: config.to_ascii(v) if isinstance(v, str) else v for k, v in entry.items()}
             for entry in raw
         }
         logging.debug(f"inp_handler: loaded {len(_standard_labels)} standard labels")
@@ -555,7 +552,7 @@ def _read_sections(inp_path: Path) -> dict[str, list[str]]:
     """Reads a .inp file and returns a dict mapping section name → list of raw lines."""
     sections: dict[str, list[str]] = {}
     current: str | None = None
-    with open(inp_path, "r", encoding="utf-8") as f:
+    with open(inp_path, "r", encoding="utf-8-sig") as f:
         for raw_line in f:
             line = raw_line.rstrip("\n")
             stripped = line.strip()

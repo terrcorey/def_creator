@@ -31,7 +31,6 @@ _REQUIRED_PATHS = [
     ("dataset", "transitions", "number_of_transitions"),
     ("dataset", "transitions", "number_of_transition_files"),
     ("dataset", "transitions", "max_wavenumber"),
-    ("dataset", "states", "max_energy"),
     ("partition_function", "max_partition_function_temperature"),
     ("partition_function", "partition_function_step_size"),
 ]
@@ -52,15 +51,6 @@ def _get_nested(d: dict, path: tuple) -> Any:
             return None
         obj = obj[key]
     return obj
-
-
-def _set_nested(d: dict, path: tuple, value: Any) -> None:
-    obj = d
-    for key in path[:-1]:
-        if key not in obj or not isinstance(obj[key], dict):
-            obj[key] = {}
-        obj = obj[key]
-    obj[path[-1]] = value
 
 
 def deep_merge(base: dict, override: dict) -> dict:

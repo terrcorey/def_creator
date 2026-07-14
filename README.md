@@ -50,7 +50,7 @@ python create_def.py /path/to/<work_dir>/
 ## CLI reference
 
 ```
-python create_def.py [--init] [--force] [--no-verbose-input] [--format FORMAT] [--log-level LEVEL] <work_dir>
+python create_def.py [--init] [--force] [--no-verbose-input] [--log-level LEVEL] <work_dir>
 ```
 
 | Flag | Default | Description |
@@ -58,7 +58,6 @@ python create_def.py [--init] [--force] [--no-verbose-input] [--format FORMAT] [
 | `--init` | off | Run initialisation step (extract data, generate `.inp`) |
 | `--force` | off | With `--init`: delete existing `.inp` and temp cache files before regenerating |
 | `--no-verbose-input` | verbose | Omit explanatory comments from the generated `.inp`; states preview is always retained |
-| `--format FORMAT` | `exomol` | Output template format |
 | `--log-level LEVEL` | `INFO` | Logging verbosity: `DEBUG`, `INFO`, `WARNING`, `ERROR` |
 
 ## Working directory structure
@@ -199,3 +198,25 @@ The following are computed automatically and do not need to be specified in the 
 ## Output encoding
 
 All output files (`.def` and `.def.json`) are written in plain ASCII. Any non-ASCII characters in user-supplied values or standard label descriptions (e.g. accented characters) are stripped of their diacritics before writing.
+
+
+## Architecture
+
+Two-step CLI workflow, orchestrated through a shared `DefContext`:
+
+1. **`--init`** (`context.run_init`): validates required files exist per isotopologue → extracts auto-derivable fields (`extractor.py`) → writes one `__temp.def.json` cache per isotopologue → writes a blank `<ds_name>.inp` template (`inp_handler.generate_blank_inp`) for the user to fill in.
+2. **build** (`context.run_build`, default when `--init` is absent): parses the filled `.inp` (`inp_handler.parse_inp`) → validates it (`inp_handler.validate_inp`) → for each isotopologue, deep-merges the temp cache with user input (`merger.merge_iso`) → checks all required fields are present (`merger.validate_complete`) → renders the final `.def` via `renderer.render()` → writes the completed `.def.json` and deletes the temp cache.
+
+**Module responsibilities:**
+
+- `create_def.py` — thin CLI entrypoint (argparse, logging setup); delegates all logic to `context.py`.
+- `context.py` — `DefContext` dataclass (derives `ds_name`/`iso_slugs` from files at construction, exposes path helpers) plus `run_init`/`run_build` orchestration.
+- `validator.py` — file-discovery and file-structure checks. `discover_dataset` scans `work_dir` for `*.states` files and parses `{iso_slug}__{ds_name}` from filenames (isotopologue slugs must start with a digit, e.g. `27Al-1H`). `validate_iso_files` enforces exactly one `.states`, exactly one `.pf`, and ≥1 `.trans` file per isotopologue, with a content spot-check. Also owns `_data_files` (filename-based file lookup) and `_open_maybe_bz2` (transparent `.bz2` decompression to a tempdir), which `extractor.py` reuses rather than duplicating.
+- `extractor.py` — stateless extraction of auto-derivable fields from `.states`/`.trans`/`.pf` files (state/transition counts, max energy/wavenumber, PF temperature range, states-column type summary, nuclear spin degeneracy from `mendeleev`, formula/atom list from the iso_slug). File I/O helpers are imported from `validator.py`. All text files are opened with an explicit `encoding="utf-8"` so behavior doesn't depend on the OS's default locale encoding.
+- `inchi.py` — all SMILES/InChI logic via RDKit. Base (non-isotopic) SMILES/InChI are derived once per dataset; per-isotopologue InChI/InChIKey are derived at build time by adding isotope mass-number layers. Auto-generation only works for diatomics and molecules with all-distinct elements — polyatomics with a repeated non-H element (e.g. CO₂, SO₂) require the user to supply SMILES/InChI manually.
+- `inp_handler.py` — the largest module: generates the blank `.inp` template (aligned key-value sections, states-file column preview, standard-label auto-fill from `lib/standard_label_structure.json`), parses the filled `.inp` back into a dict, and validates its contents (`validate_inp`, returning `(errors, warnings)` — warnings require a `y/N` confirmation before build, errors block). User-facing message strings for parsing/validation live in module-level dicts (`_VALIDATION_ERRORS`, `_VALIDATION_WARNINGS`) near the top of the file — edit messages there without touching logic. The `.inp` is read with `encoding="utf-8-sig"` so a BOM added by Windows editors doesn't break section-header parsing.
+- `merger.py` — `deep_merge`/`merge_iso` combine the auto-derived temp cache with user-supplied `.inp` fields (a `None` user value means "keep auto-derived"); `validate_complete` checks a fixed list of required dict paths (`_REQUIRED_PATHS`) before rendering is allowed.
+- `renderer.py` — a single `render(merged_dict, output_path)` function (plus a private `_build_lines` helper); there is one output format (ExoMol), so there's no renderer registry or base class. Field order is hardcoded to match `def_structure.txt` from the sibling `def_updater` project (kept as a comment reference, not a runtime dependency). Output is plain ASCII — non-ASCII characters (e.g. accented letters in descriptions) are stripped of diacritics via `config.to_ascii()` before writing.
+- `config.py` — path helpers for `lib/standard_label_structure.json` and `def_templates/<name>.json`, plus the shared `to_ascii()` diacritic-stripping helper used by `renderer.py` and `inp_handler.py`.
+
+**Data flow key point:** nothing is stored redundantly between the temp cache and the `.inp` — auto-derived fields (counts, formulas, masses) live only in `__temp.def.json`; user-editable fields (point group, irreps, quantum labels, DOI, etc.) live only in the `.inp`. `merger.merge_iso` is the sole place these two are combined into the final `exomol.json`-shaped dict that `renderer.py` consumes.

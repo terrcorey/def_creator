@@ -35,10 +35,6 @@ def main() -> None:
         help="Include comments in the generated .inp file (default: true)",
     )
     parser.add_argument(
-        "--format", default="exomol", dest="format_name",
-        help="Output template format (default: exomol)",
-    )
-    parser.add_argument(
         "--log-level", default="INFO",
         choices=["DEBUG", "INFO", "WARNING", "ERROR"],
         help="Logging verbosity (default: INFO)",
@@ -62,14 +58,13 @@ def main() -> None:
         sys.exit(1)
     logging.info(
         f"create_def: work_dir='{ctx.work_dir}', ds_name='{ctx.ds_name}', "
-        f"iso_slugs={ctx.iso_slugs}, format='{args.format_name}', init={args.init}"
+        f"iso_slugs={ctx.iso_slugs}, init={args.init}"
     )
 
-    #call context.py for logic, add more if else blocks for other templates
     if args.init:
         context.run_init(ctx, verbose_input=args.verbose_input, force=args.force)
     else:
-        context.run_build(ctx, format_name=args.format_name)
+        context.run_build(ctx)
 
 
 if __name__ == "__main__":

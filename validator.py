@@ -52,7 +52,7 @@ _VALIDATOR_ERRORS: dict[str, str] = {
 }
 
 
-def _open_for_check(path: Path, tmpdir: str) -> Path:
+def _open_maybe_bz2(path: Path, tmpdir: str) -> Path:
     """Decompress .bz2 to tmpdir if needed; return a readable path."""
     if path.suffix == ".bz2":
         dest = Path(tmpdir) / path.stem
@@ -193,8 +193,8 @@ def validate_iso_files(work_dir: Path, iso_slug: str, ds_name: str) -> None:
         )
 
     with tempfile.TemporaryDirectory() as tmpdir:
-        _spot_check_states(_open_for_check(states_all[0], tmpdir))
+        _spot_check_states(_open_maybe_bz2(states_all[0], tmpdir))
         for raw in trans_all:
-            _spot_check_trans(_open_for_check(raw, tmpdir))
+            _spot_check_trans(_open_maybe_bz2(raw, tmpdir))
 
     logging.info(f"validator: '{iso_slug}' passed")

@@ -1,4 +1,3 @@
-import bz2
 import datetime
 import logging
 import re
@@ -8,60 +7,21 @@ from pathlib import Path
 import pandas as pd
 from mendeleev import isotope as md_isotope
 
+from validator import _data_files, _open_maybe_bz2
+
 
 def slug_to_formula(slug: str) -> str:
     """Converts an iso_slug (e.g. '27Al-1H') to a chemical formula (e.g. '(27Al)(1H)')."""
     logging.debug(f"slug_to_formula: '{slug}'")
-    slug_clean = slug.replace("_p", "+")
-    parts = slug_clean.split("-")
-    formula = ""
-    for part in parts:
-        chars = list(part)
-        chars.insert(0, "(")
-        chars.reverse()
-        first_alpha = 0
-        for i, c in enumerate(chars):
-            if c.isalpha():
-                first_alpha = i
-                break
-        chars.insert(first_alpha, ")")
-        chars.reverse()
-        formula += "".join(chars)
+
+    def wrap(part: str) -> str:
+        core = part.rstrip("0123456789+")
+        return f"({core}){part[len(core):]}"
+
+    formula = "".join(wrap(p) for p in slug.replace("_p", "+").split("-"))
     formula = formula.replace("(cis)", "cis-").replace("(trans)", "trans-")
     logging.debug(f"slug_to_formula: result '{formula}'")
     return formula
-
-
-def _data_files(work_dir: Path, iso_slug: str, ds_name: str, ext: str) -> list[Path]:
-    """
-    Returns files in work_dir whose names start with '{iso_slug}__{ds_name}' and end
-    with '{ext}'. Plain files take precedence; a .bz2 file is only included when no
-    plain counterpart exists for that stem.
-    """
-    prefix = f"{iso_slug}__{ds_name}"
-    plain = sorted(
-        f for f in work_dir.iterdir()
-        if f.is_file() and f.name.startswith(prefix) and f.name.endswith(ext)
-    )
-    plain_set = set(plain)
-    compressed = sorted(
-        f for f in work_dir.iterdir()
-        if f.is_file()
-        and f.name.startswith(prefix)
-        and f.name.endswith(f"{ext}.bz2")
-        and f.with_suffix("") not in plain_set
-    )
-    return plain + compressed
-
-
-def _open_maybe_bz2(path: Path, tmpdir: str) -> Path:
-    """Decompress .bz2 to tmpdir if needed; return a readable path."""
-    if path.suffix == ".bz2":
-        dest = Path(tmpdir) / path.stem
-        with open(path, "rb") as f_in:
-            dest.write_bytes(bz2.decompress(f_in.read()))
-        return dest
-    return path
 
 
 def expand_slug_atoms(iso_slug: str) -> tuple[list[tuple[int, str]], int]:
@@ -163,7 +123,7 @@ def extract_states_info(work_dir: Path, iso_slug: str, ds_name: str) -> dict:
         path = _open_maybe_bz2(states_files[0], tmpdir)
         num_lines = 0
         max_energy = 0.0
-        with open(path, "r") as f:
+        with open(path, "r", encoding="utf-8") as f:
             for line in f:
                 stripped = line.strip()
                 if not stripped:
@@ -185,7 +145,7 @@ def _load_state_energies(work_dir: Path, iso_slug: str, ds_name: str) -> dict[in
     energies: dict[int, float] = {}
     with tempfile.TemporaryDirectory() as tmpdir:
         path = _open_maybe_bz2(states_files[0], tmpdir)
-        with open(path, "r") as f:
+        with open(path, "r", encoding="utf-8") as f:
             for line in f:
                 stripped = line.strip()
                 if stripped:
@@ -209,7 +169,7 @@ def extract_transitions_info(work_dir: Path, iso_slug: str, ds_name: str) -> dic
     has_wavenumber_col = False
     with tempfile.TemporaryDirectory() as tmpdir:
         first_path = _open_maybe_bz2(trans_files[0], tmpdir)
-        with open(first_path) as f:
+        with open(first_path, "r", encoding="utf-8") as f:
             for line in f:
                 stripped = line.strip()
                 if stripped:
@@ -228,7 +188,7 @@ def extract_transitions_info(work_dir: Path, iso_slug: str, ds_name: str) -> dic
         for raw_path in trans_files:
             path = _open_maybe_bz2(raw_path, tmpdir)
             file_lines = 0
-            with open(path, "r") as f:
+            with open(path, "r", encoding="utf-8") as f:
                 for line in f:
                     stripped = line.strip()
                     if not stripped:

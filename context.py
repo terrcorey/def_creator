@@ -171,7 +171,7 @@ def run_init(ctx: DefContext, verbose_input: bool = True, force: bool = False) -
     print()
 
 
-def run_build(ctx: DefContext, format_name: str = "exomol") -> None:
+def run_build(ctx: DefContext) -> None:
     """
     Standard (no --init) workflow:
       1. Parse and validate .inp file
@@ -227,7 +227,6 @@ def run_build(ctx: DefContext, format_name: str = "exomol") -> None:
         sys.exit(1)
 
     # Merge, validate, render per isotopologue
-    rend = renderer.get_renderer(format_name)
     any_failed = False
 
     for iso_slug in ctx.isotopologue_slugs():
@@ -272,7 +271,7 @@ def run_build(ctx: DefContext, format_name: str = "exomol") -> None:
         # Render
         output_path = ctx.def_output_path(iso_slug)
         try:
-            rend.render(merged, output_path)
+            renderer.render(merged, output_path)
             logging.info(f"context: wrote '{output_path}'")
             print(f"  Wrote: {output_path}")
         except Exception as e:
