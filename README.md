@@ -4,7 +4,7 @@ Generates ExoMol `.def` and `.def.json` definition files from a molecular line l
 
 ## Installation
 
-Requires Python 3.9+.
+Requires Python 3.10+.
 
 **Linux / macOS**
 
