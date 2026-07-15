@@ -82,6 +82,24 @@ def nuclear_spin_degeneracy(iso_slug: str) -> tuple[int, bool] | None:
     return g_ns, has_equiv
 
 
+def main_isotopologue_slug(iso_slugs: list[str]) -> str:
+    """
+    Returns the iso_slug composed of the most naturally abundant isotope of each
+    element — i.e. the "main" isotopologue of the dataset, as opposed to minor
+    (isotopically substituted) ones. Used to decide which isotopologue's .def file
+    receives dataset-level (non-isotope-specific) fields such as the CAS Registry
+    Number, which CAS assigns to the parent molecule rather than per isotopologue.
+    """
+    def abundance_product(slug: str) -> float:
+        atoms, _ = expand_slug_atoms(slug)
+        product = 1.0
+        for mass_num, symbol in atoms:
+            product *= md_isotope(symbol, mass_num).abundance or 0.0
+        return product
+
+    return max(iso_slugs, key=abundance_product)
+
+
 def extract_iso_info(iso_slug: str) -> dict:
     """Derives isotopologue identity and mass fields from the iso_slug (no file I/O)."""
     logging.info(f"extractor: extract_iso_info for '{iso_slug}'")

@@ -27,3 +27,6 @@ scratchpad.ipynb
 
 # Claude
 CLAUDE.md
+
+# Secrets
+.env

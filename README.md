@@ -137,7 +137,7 @@ All files in a set must have the same column format (3-column or 4-column). The 
 
 | Key                           | Description                                                                           |
 |-------------------------------|---------------------------------------------------------------------------------------|
-| `cas_registry_number`         | CAS number (optional)                                                                 |
+| `cas_registry_number`         | CAS number (optional) — auto-filled on the **main isotopologue only** at build time via the CAS Common Chemistry API if `CAS_API_KEY` is set (see below); minor isotopologues are left blank since CAS registers the parent molecule, not isotope-labeled variants; leave blank to fill in manually otherwise |
 | `point_group`                 | Symmetry group (e.g. `C`, `Cs`, `C2v`, `Dinfh`)                                      |
 | `irreps`                      | Irreducible representations as `label:degeneracy` pairs, e.g. `Sigma+:12, Sigma-:12` |
 | `quantum_case_label`          | Quantum coupling case — one of: `dcs`, `dos`, `lpcs`, `lpos`, `asymcs`, `asymos`, `stos`, `stcs`, `sphcs`, `sphos` |
@@ -194,6 +194,7 @@ The following are computed automatically and do not need to be specified in the 
 - Boolean availability flags — from quantum label names (see above)
 - SMILES, InChI, InChIKey — base SMILES/InChI auto-derived from isotopologue formula; per-isotopologue InChI/InChIKey generated at build time via RDKit (where possible; see table above)
 - Nuclear spin degeneracy (g_ns) — computed from mendeleev nuclear spin values and shown in the `.inp` header as a guide for filling in `irreps`
+- CAS registry number — looked up once per dataset by the base (non-isotopic) InChIKey via the [CAS Common Chemistry API](https://commonchemistry.cas.org/api), and written only to the main isotopologue (the one built from each element's most naturally abundant isotope; minor isotopologues are left blank, since CAS registers the parent molecule, not isotope-labeled variants). Requires the `CAS_API_KEY` environment variable set to a free API key from [commonchemistry.cas.org](https://commonchemistry.cas.org) — either exported in your shell, or placed in a `KEY=VALUE` line in a `.env` file in the project root (gitignored, never committed). Skipped (left for manual entry) if the key is unset, the request fails, or the match is ambiguous.
 
 ## Output encoding
 

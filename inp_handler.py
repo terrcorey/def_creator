@@ -70,7 +70,7 @@ _INP_COMMENTS: dict = {
         "continuum": "true if photo-absorption continuum cross-sections are included",
     },
     "isotopologue": {
-        "cas_registry_number": "CAS number (optional) — lookup: https://commonchemistry.cas.org",
+        "cas_registry_number": "CAS number (optional) — auto-filled at build time if CAS_API_KEY is set, else leave blank or fill manually: https://commonchemistry.cas.org",
         "point_group": "Symmetry group (e.g. C, Cs, C2v, Dinfh)",
         "irreps": "Irreducible representations as label:degeneracy pairs (e.g. Sigma+:12, Sigma-:12)",
         "quantum_case_label": "Quantum coupling case — lookup: https://www.exomol.com/data/quantum-cases/",

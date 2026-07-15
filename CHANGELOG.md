@@ -2,8 +2,27 @@
 
 ## Upcoming features/tests
 
-1. **CAS registry number auto-fill** — use `PyComChem` (CommonChemistry API) to look up `cas_registry_number` per isotopologue, at build time in `context.run_build` alongside the existing `derive_iso_inchi` call (queried by the same base SMILES/InChI). Falls back to blank/manual entry if the lookup fails or is offline, same as SMILES auto-derivation does today for polyatomics. Note: `cas`/`casregnum`/`chemformula` only validate/format a CAS number you already have — they don't look one up; `PyComChem` is the one that actually queries by formula/SMILES.
-2. **Cross-platform CI smoke test** — GitHub Actions matrix (`ubuntu-latest` / `windows-latest` / `macos-latest` × Python 3.12, on push/PR to `main`) running `--init` + build against `samples/COmet` and `samples/AloHa/27Al-1H`. Strict diff against the committed `samples/AloHa/27Al-1H/ref/*.def`/`*.def.json`; COmet checked for clean exit only (no committed reference yet). Directly validates this session's 0.5.3 fixes on real Windows/macOS runners instead of Linux-side simulation.
+v1 targets a polished tool for generating the base ExoMol template only. Broadening and photodissociation data will get their own def-template structures in a future v2, once the tool is generalized to support multiple template types.
+
+1. **Cross-platform CI smoke test** — GitHub Actions matrix (`ubuntu-latest` / `windows-latest` / `macos-latest` × Python 3.12, on push/PR to `main`) running `--init` + build against `samples/COmet` and `samples/AloHa/27Al-1H`. Strict diff against the committed `samples/AloHa/27Al-1H/ref/*.def`/`*.def.json`; COmet checked for clean exit only (no committed reference yet). Validates the 0.5.3 Windows/macOS fixes on real runners instead of Linux-side simulation.
+2. **ExoMol sample downloader** — ExoMol's public API can supply already-published datasets along with their existing `.def`/`.def.json` files. A small downloader would give more verification fixtures beyond `COmet`/`AloHa`, feeding the same CI matrix above once it exists.
+
+## [0.6.0] — 2026-07-15 — CAS registry number auto-fill
+
+### Added
+- **`cas.py`** — new module, `cas_rn_from_inchikey()` looks up a CAS Registry Number by InChIKey via the [CAS Common Chemistry API](https://commonchemistry.cas.org/api). Implemented as a ~15-line `urllib`/`json` call rather than the `PyComChem` package originally suggested for this — that package's `comchem/__init__.py` does a hard top-level `import cairosvg` (needed only for its unrelated image-export feature), which would have pulled in `cairosvg`/`cairocffi`/`pillow`/`cffi`/`pycparser`/`cssselect2`/`defusedxml`/`tinycss2`/`webencodings` (9 packages) for functionality this project doesn't use
+- **`.env` support** — `cas._load_dotenv()` reads a gitignored `KEY=VALUE` `.env` file in the project root and populates `os.environ` (only for keys not already set), so `CAS_API_KEY` doesn't need to be exported in every shell session. No `python-dotenv` dependency added for one variable. `.env` added to `.gitignore`
+- **`extractor.main_isotopologue_slug(iso_slugs)`** — returns the isotopologue built from each element's most naturally abundant isotope (via the same `mendeleev` abundance data already used for nuclear spin degeneracy), e.g. picks `1H2-16O` over `2H2-16O`/`1H2-18O` for water, `12C-16O` over `13C-16O` for carbon monoxide
+- **`context.run_build`** — looks up the CAS RN once per dataset by the *base* (non-isotopic) InChIKey (derived from the dataset-level SMILES — the same molecule `derive_iso_inchi` already uses), and writes it only to the main isotopologue's `.def`/`.def.json`. Minor (isotopically substituted) isotopologues are left blank, since CAS Common Chemistry registers the parent molecule, not isotope-labeled variants — confirmed against `samples/AloHa`, where AlH's registered entry (CAS `13967-22-1`) uses the base InChIKey rather than an isotope-labeled one. A user-supplied `cas_registry_number` in the `.inp` (dataset- or isotopologue-level) always takes precedence and is never overwritten
+- **README / `.inp` template** — `cas_registry_number` field docs updated to describe the auto-fill behavior, the main-isotopologue-only scope, and the `CAS_API_KEY`/`.env` setup
+
+### Verified
+- `python3 cas.py` self-check passes (mocked: single match, zero matches, ambiguous multi-match)
+- Live API smoke-tested with a real `CAS_API_KEY`: aspirin (`BSYNRYMUTXBXSQ-UHFFFAOYSA-N` → `50-78-2`) resolves correctly; water (`XLYOFNOQVPJJNP-UHFFFAOYSA-N`) correctly returns no match (30 loosely-related substances — hydrates/clusters/isotopologues — trigger the ambiguous-match guard rather than guessing)
+- Full `--init` → build against `samples/AloHa/27Al-1H`: output CAS RN (`13967-22-1`) now matches the committed reference exactly; all other diffs are the pre-existing ones already documented in 0.5.4 (unrelated to this change)
+- Full `--init` → build against `samples/COmet`: output byte-identical to the committed reference (the ion isn't in Common Chemistry's database, so the field is correctly left blank, changing nothing)
+- `extractor.main_isotopologue_slug` spot-checked against water and CO isotopologue sets (see Added, above)
+- Bad/missing API key against the live endpoint: logs a warning, returns `None`, does not crash the build
 
 ## [0.5.4] — 2026-07-15 — Python 3.8 compatibility backport
 

@@ -10,6 +10,7 @@ import sys
 from dataclasses import dataclass, field
 from pathlib import Path
 
+import cas
 import extractor
 import inchi as inchi_mod
 import inp_handler
@@ -228,6 +229,30 @@ def run_build(ctx: DefContext) -> None:
         print("Fix the above and re-run.")
         sys.exit(1)
 
+    # Resolve dataset-level base SMILES once (shared across all isotopologues).
+    base_smiles = dataset_user.get("smiles", "").strip()
+    if not base_smiles:
+        base_inchi = dataset_user.get("base_inchi", "").strip()
+        if base_inchi:
+            base_smiles = inchi_mod.smiles_from_inchi(base_inchi) or ""
+            if base_smiles:
+                logging.info("context: derived base SMILES from InChI")
+
+    # Look up the dataset's CAS Registry Number once, by the base (non-isotopic)
+    # InChIKey — Common Chemistry registers the un-isotope-labeled molecule, so a
+    # per-isotopologue (isotope-labeled) InChIKey lookup would almost always miss.
+    dataset_cas_rn = None
+    if base_smiles:
+        base_result = inchi_mod.inchi_from_smiles(base_smiles)
+        if base_result:
+            dataset_cas_rn = cas.cas_rn_from_inchikey(base_result[1])
+            if dataset_cas_rn:
+                logging.info(f"context: auto-derived CAS RN '{dataset_cas_rn}' for dataset")
+
+    # The CAS RN above isn't isotope-specific, so it belongs on the main isotopologue's
+    # .def file only; minor (isotopically substituted) isotopologues are left blank.
+    main_slug = extractor.main_isotopologue_slug(ctx.isotopologue_slugs())
+
     # Merge, validate, render per isotopologue
     any_failed = False
 
@@ -242,14 +267,10 @@ def run_build(ctx: DefContext) -> None:
         iso_user = dict(dataset_user)
         iso_user.update(per_iso_user.get(iso_slug, {}))
 
+        if not iso_user.get("cas_registry_number") and dataset_cas_rn and iso_slug == main_slug:
+            iso_user["cas_registry_number"] = dataset_cas_rn
+
         # Derive per-isotopologue InChI/InChIKey from the dataset-level SMILES.
-        base_smiles = dataset_user.get("smiles", "").strip()
-        if not base_smiles:
-            base_inchi = dataset_user.get("base_inchi", "").strip()
-            if base_inchi:
-                base_smiles = inchi_mod.smiles_from_inchi(base_inchi) or ""
-                if base_smiles:
-                    logging.info(f"context: derived base SMILES from InChI for '{iso_slug}'")
         if base_smiles:
             atoms, _ = extractor.expand_slug_atoms(iso_slug)
             result = inchi_mod.derive_iso_inchi(base_smiles, atoms, iso_slug=iso_slug)
