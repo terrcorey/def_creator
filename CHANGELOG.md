@@ -1,9 +1,25 @@
 # Changelog
 
-## Goals for next session
+## Upcoming features/tests
 
 1. **CAS registry number auto-fill** — use `PyComChem` (CommonChemistry API) to look up `cas_registry_number` per isotopologue, at build time in `context.run_build` alongside the existing `derive_iso_inchi` call (queried by the same base SMILES/InChI). Falls back to blank/manual entry if the lookup fails or is offline, same as SMILES auto-derivation does today for polyatomics. Note: `cas`/`casregnum`/`chemformula` only validate/format a CAS number you already have — they don't look one up; `PyComChem` is the one that actually queries by formula/SMILES.
 2. **Cross-platform CI smoke test** — GitHub Actions matrix (`ubuntu-latest` / `windows-latest` / `macos-latest` × Python 3.12, on push/PR to `main`) running `--init` + build against `samples/COmet` and `samples/AloHa/27Al-1H`. Strict diff against the committed `samples/AloHa/27Al-1H/ref/*.def`/`*.def.json`; COmet checked for clean exit only (no committed reference yet). Directly validates this session's 0.5.3 fixes on real Windows/macOS runners instead of Linux-side simulation.
+
+## [0.5.4] — 2026-07-15 — Python 3.8 compatibility backport
+
+### Changed
+- **Minimum Python version lowered from 3.10 to 3.8** — the codebase used PEP 604 union syntax (`X | None`, 12 occurrences) and PEP 585 generics (`list[...]`/`dict[...]`/`tuple[...]`, 49 occurrences) throughout type annotations, both of which raise `TypeError` at import time on Python < 3.9/3.10. Since every occurrence was confined to annotations (no runtime `isinstance`/introspection on these types anywhere in the codebase), added `from __future__ import annotations` (PEP 563, supported since 3.7) as the first statement in `context.py`, `extractor.py`, `merger.py`, `renderer.py`, `inchi.py`, `validator.py`, and `inp_handler.py` — defers all annotations to strings, no per-annotation rewrite needed
+- **`create_def.py`** — replaced `argparse.BooleanOptionalAction` (3.9+ only) with a plain `--no-verbose-input` / `store_false` flag; matches what the README already documented (the auto-generated `--verbose-input` positive form was never documented or needed)
+- **`requirements.txt`** pins lowered to versions with `Requires-Python` floors at or below 3.8: `pandas` 2.3.3 → 2.0.3, `mendeleev` 1.1.0 → 0.16.2, `rdkit` 2026.3.3 → 2024.3.5 (latest release with a `cp38` wheel; PyPI declares no `Requires-Python` for any rdkit release)
+- **README** — "Requires Python 3.10+" → "Requires Python 3.8+"
+- **`samples/AloHa/AloHa.inp`** filled in with real values (point_group, irreps, quantum_case_label, max_temperature, etc.) — previously checked in as a blank `--init`-generated template, which meant this fixture couldn't reproduce the checked-in `samples/AloHa/27Al-1H/ref/*.def*` output
+
+### Verified
+No Python 3.8/3.9 interpreter was available locally or on the host, so verification used `podman` (already installed, rootless, on the Fedora host via `flatpak-spawn --host`) against the official `python:3.8` Docker Hub image (3.8.20):
+- All 8 modules import cleanly under 3.8.20 with the new pins
+- Full `--init` + build pipeline against `samples/COmet`: output `.def`/`.def.json` byte-identical to the committed reference
+- Full pipeline against `samples/AloHa/27Al-1H`: ran without error; remaining diffs vs. `ref/` traced to the reconstructed `.inp` not being the literal original (missing optional `cas_registry_number`/`doi`, a `continuum` flag set differently, an older `version_date`) plus a pre-existing renderer limitation (no `broad`/broadening section support at all) — none caused by this backport
+- Directly compared `mendeleev==0.16.2` vs. the old `1.1.0` pin for the isotope masses used in this dataset (Al-27, H-1): bit-for-bit identical (`27.989363439898` both), confirming the dependency downgrade introduces no precision regression
 
 ## [0.5.3] — 2026-07-14 — Windows/macOS compatibility pass
 

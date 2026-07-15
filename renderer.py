@@ -4,6 +4,8 @@ Renders an exomol.json-shaped merged dict into the flat ExoMol .def text format.
 The rendering order follows def_structure.txt from def_updater, hardcoded here to
 remove the runtime dependency on that file. Broadening fields are omitted (future template).
 """
+from __future__ import annotations
+
 from pathlib import Path
 import logging
 

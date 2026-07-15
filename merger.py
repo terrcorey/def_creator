@@ -2,6 +2,8 @@
 Merges auto-derived fields (from .def.json cache) with user-supplied fields (from parsed .inp).
 Also validates that all required fields are populated before rendering.
 """
+from __future__ import annotations
+
 import logging
 from typing import Any
 

@@ -29,7 +29,7 @@ version_date               = 20260709
 smiles                     = [Al][H]
 inchi                      = InChI=1S/Al.H
 doi                        = 
-max_temperature            = 
+max_temperature            = 5000
 cooling_function_available = false
 specific_heat_available    = false
 continuum                  = false
@@ -50,9 +50,9 @@ continuum                  = false
 # quantum_case_label    Quantum coupling case — lookup: https://www.exomol.com/data/quantum-cases/
 #------------------------------input------------------------------
 cas_registry_number = 
-point_group         = 
+point_group         = C
 irreps              = Sigma+:12, Sigma-:12
-quantum_case_label  = 
+quantum_case_label  = dos
 
 # ---- States file preview (27Al-1H) ----------------------------------------
 #  First 5 rows:
@@ -82,16 +82,16 @@ ID                  # col  1  integer       range  1 - 1364
 E                   # col  2  float         range  0.0 - 29127.903725
 gtot                # col  3  integer       range  12 - 1452
 J                   # col  4  integer       range  0 - 60
-                    # col  5  float         range  1e-06 - 4.2432
-                    # col  6  float         range  1.805e-13 - inf
-                    # col  7  float         range  0.0 - 0.5
-                    # col  8  string        values '+', '-'
-                    # col  9  string        values 'e', 'f'
-                    # col 10  string        values 'X(1SIGMA+)', 'A(1PI)'
-                    # col 11  integer       range  0 - 22
-                    # col 12  integer       range  -1 - 1
-                    # col 13  integer       range  0 - 0
-                    # col 14  integer       range  -1 - 1
-                    # col 15  string        values 'Ma', 'Ca'
-                    # col 16  float         range  0.0 - 29127.903725
+unc                    # col  5  float         range  1e-06 - 4.2432
+tau                 # col  6  float         range  1.805e-13 - inf
+gfactor                 # col  7  float         range  0.0 - 0.5
+    +/-             # col  8  string        values '+', '-'
+       e/f             # col  9  string        values 'e', 'f'
+        ElecState            # col 10  string        values 'X(1SIGMA+)', 'A(1PI)'
+           v         # col 11  integer       range  0 - 22
+         hunda:Lambda           # col 12  integer       range  -1 - 1
+hunda:Sigma                    # col 13  integer       range  0 - 0
+hunda:Omega                    # col 14  integer       range  -1 - 1
+Auxiliary:SourceType                    # col 15  string        values 'Ma', 'Ca'
+Auxiliary:Ecal                    # col 16  float         range  0.0 - 29127.903725
 

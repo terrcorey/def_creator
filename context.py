@@ -2,6 +2,8 @@
 DefContext: the shared state object that replaces all global variables.
 Also provides the top-level run_init() and run_build() orchestration functions.
 """
+from __future__ import annotations
+
 import json
 import logging
 import sys

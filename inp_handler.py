@@ -6,6 +6,8 @@ The .inp format is an INI-style plain text file with [section] headers and key =
   label_name
   label_name = ffmt cfmt | description
 """
+from __future__ import annotations
+
 import json
 import logging
 from datetime import date

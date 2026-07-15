@@ -6,6 +6,8 @@ level.  For each isotopologue, derive_iso_inchi() assigns the isotope mass numbe
 the iso_slug and generates the isotopologue-specific InChI/InChIKey via RDKit — the user
 never needs to fill in per-isotopologue InChI/InChIKey fields.
 """
+from __future__ import annotations
+
 import logging
 
 

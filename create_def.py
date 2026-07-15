@@ -30,9 +30,9 @@ def main() -> None:
         help="With --init: delete existing .inp and temp cache files before regenerating",
     )
     parser.add_argument(
-        "--verbose-input", dest="verbose_input",
-        action=argparse.BooleanOptionalAction, default=True,
-        help="Include comments in the generated .inp file (default: true)",
+        "--no-verbose-input", dest="verbose_input",
+        action="store_false", default=True,
+        help="Omit explanatory comments from the generated .inp file",
     )
     parser.add_argument(
         "--log-level", default="INFO",
