@@ -10,6 +10,11 @@ v1 targets a polished tool for generating the base ExoMol template only. Broaden
    - **New fixture: CO2 `Dozen`, isotopologue `12C-16O2`** — a recent (September 2025) 12-isotopologue CO2 line list; fetches the full `.states`/`.pf` plus 2 of its 20 wavenumber-range `.trans` files. Exercises both the repeated-element manual SMILES/InChI entry path (CO2 has two oxygens, same as the `SO2` example already in the README) and multi-`.trans`-file handling, neither of which any current fixture covers
    - Once this exists, `COmet` could rejoin the CI matrix the same way — fetched rather than committed — sidestepping its 589MB `.trans` file; not committed to for the next session, just noted as a natural follow-on
 
+## [0.6.2] — 2026-07-16 — Python 3.12 install fix
+
+### Fixed
+- **`requirements.txt`** — `pandas` was pinned to an exact `2.0.3` (chosen in 0.5.4 for the Python 3.8 floor), which has no Python 3.12 wheel; installing on 3.12 fell back to a from-source build and failed on all three CI runners. Loosened to `pandas>=2.0.3,<3`, so pip resolves a version with a matching wheel for whichever interpreter it's installed on
+
 ## [0.6.1] — 2026-07-16 — CI smoke test
 
 ### Added
