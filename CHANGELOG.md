@@ -4,8 +4,28 @@
 
 v1 targets a polished tool for generating the base ExoMol template only. Broadening and photodissociation data will get their own def-template structures in a future v2, once the tool is generalized to support multiple template types.
 
-1. **Cross-platform CI smoke test** — GitHub Actions matrix (`ubuntu-latest` / `windows-latest` / `macos-latest` × Python 3.12, on push/PR to `main`) running `--init` + build against `samples/COmet` and `samples/AloHa/27Al-1H`. Strict diff against the committed `samples/AloHa/27Al-1H/ref/*.def`/`*.def.json`; COmet checked for clean exit only (no committed reference yet). Validates the 0.5.3 Windows/macOS fixes on real runners instead of Linux-side simulation.
-2. **ExoMol sample downloader** — ExoMol's public API can supply already-published datasets along with their existing `.def`/`.def.json` files. A small downloader would give more verification fixtures beyond `COmet`/`AloHa`, feeding the same CI matrix above once it exists.
+1. **ExoMol sample downloader** — a general-purpose, standalone script (kept separate from `create_def.py`, which end users never need for this) that fetches a dataset/isotopologue's `.states`/`.trans`/`.pf` files, and its published reference `.def`/`.def.json`, from ExoMol's public API into a local cache directory — checking that directory first and only downloading what's missing. Nothing it fetches is committed to the repo; CI runs it as a setup step before `--init`/build for each fixture.
+   - **`AloHa` migrates to this pattern** — its currently-committed `.states`/`.trans`/`ref/*.def*` are removed from git in favor of fetch-on-demand, so every CI fixture follows one consistent approach
+   - **New fixture: `AloHa` isotopologue `27Al-2H`** (AlD) — added alongside the existing `27Al-1H` to exercise the multi-isotopologue-per-dataset build path, which nothing currently in CI covers
+   - **New fixture: CO2 `Dozen`, isotopologue `12C-16O2`** — a recent (September 2025) 12-isotopologue CO2 line list; fetches the full `.states`/`.pf` plus 2 of its 20 wavenumber-range `.trans` files. Exercises both the repeated-element manual SMILES/InChI entry path (CO2 has two oxygens, same as the `SO2` example already in the README) and multi-`.trans`-file handling, neither of which any current fixture covers
+   - Once this exists, `COmet` could rejoin the CI matrix the same way — fetched rather than committed — sidestepping its 589MB `.trans` file; not committed to for the next session, just noted as a natural follow-on
+
+## [0.6.1] — 2026-07-16 — CI smoke test
+
+### Added
+- **GitHub Actions CI** (`.github/workflows/ci.yml`) — runs on every push/PR to `master`, across a `ubuntu-latest` / `windows-latest` / `macos-latest` × Python 3.12 matrix. Installs dependencies, runs the full `--init` → build pipeline against `samples/AloHa/27Al-1H`, and diffs the output against the committed `ref/*.def`/`*.def.json`. CAS registry number lookup uses a live API call, gated on a `CAS_API_KEY` secret stored in a GitHub Environment named `.env`
+- **`.github/scripts/check_aloha_ref.py`** — the reference-diff check used by CI. Masks three pre-existing, tracked gaps rather than failing on them every run: mendeleev-derived isotopologue mass precision vs. the originally published mass, the missing `broad`/broadening section (out of scope for v1 — see roadmap above), and one standard-label description wording mismatch (`v`'s library description reads "State vibrational quantum number"; the original AloHa `.def` uses "Vibrational quantum number")
+
+### Changed
+- **`samples/AloHa/AloHa.inp`** — `version_date`, `doi`, and `continuum` filled in to match the real published AloHa dataset, so a correct build now reproduces the committed reference for those fields (previously blank/incorrect, which meant even a correct build could never match `ref/`)
+
+### Scope
+CI currently covers `AloHa` only. `COmet` is excluded — its `.trans` file (589MB) isn't committed to the repo, so CI has no data to check out for it. It'll be added once the ExoMol sample downloader (next goal, above) can fetch it at CI-time instead.
+
+### Verified
+- Full `--init` → build pipeline run locally against `samples/AloHa/27Al-1H`: output matches `ref/` once the three tracked gaps above are accounted for
+- `check_aloha_ref.py` correctly flags a genuine regression (verified by injecting a fake field change into a built output and confirming the check fails)
+- Not yet exercised on GitHub Actions itself — this will be confirmed on the first push
 
 ## [0.6.0] — 2026-07-15 — CAS registry number auto-fill
 

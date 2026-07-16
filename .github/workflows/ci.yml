@@ -1,0 +1,41 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+jobs:
+  smoke-test:
+    environment: .env
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: bash
+    env:
+      CAS_API_KEY: ${{ secrets.CAS_API_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - run: pip install -r requirements.txt
+
+      - name: Stage AloHa.inp into work dir
+        run: cp samples/AloHa/AloHa.inp samples/AloHa/27Al-1H/AloHa.inp
+
+      - run: python create_def.py --init samples/AloHa/27Al-1H
+      - run: python create_def.py samples/AloHa/27Al-1H
+
+      - name: Diff build output against committed reference
+        run: >
+          python .github/scripts/check_aloha_ref.py
+          samples/AloHa/27Al-1H/27Al-1H__AloHa
+          samples/AloHa/27Al-1H/ref/27Al-1H__AloHa

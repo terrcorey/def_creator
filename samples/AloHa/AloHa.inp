@@ -25,14 +25,14 @@ shared_quantum_labels = false
 # specific_heat_available      true if a specific heat file is included
 # continuum                    true if photo-absorption continuum cross-sections are included
 #------------------------------input------------------------------
-version_date               = 20260709
+version_date               = 20240307
 smiles                     = [Al][H]
 inchi                      = InChI=1S/Al.H
-doi                        = 
+doi                        = 10.1093/mnras/stad3802
 max_temperature            = 5000
 cooling_function_available = false
 specific_heat_available    = false
-continuum                  = false
+continuum                  = true
 
 
 #==============================================================
