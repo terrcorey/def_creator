@@ -3,7 +3,6 @@ from __future__ import annotations
 import datetime
 import logging
 import re
-import tempfile
 from pathlib import Path
 
 import pandas as pd
@@ -139,19 +138,17 @@ def extract_states_info(work_dir: Path, iso_slug: str, ds_name: str) -> dict:
     if not states_files:
         raise FileNotFoundError(f"No .states file found for '{iso_slug}' in '{work_dir}'")
 
-    with tempfile.TemporaryDirectory() as tmpdir:
-        path = _open_maybe_bz2(states_files[0], tmpdir)
-        num_lines = 0
-        max_energy = 0.0
-        with open(path, "r", encoding="utf-8") as f:
-            for line in f:
-                stripped = line.strip()
-                if not stripped:
-                    continue
-                num_lines += 1
-                val = float(stripped.split()[1])
-                if val > max_energy:
-                    max_energy = val
+    num_lines = 0
+    max_energy = 0.0
+    with _open_maybe_bz2(states_files[0]) as f:
+        for line in f:
+            stripped = line.strip()
+            if not stripped:
+                continue
+            num_lines += 1
+            val = float(stripped.split()[1])
+            if val > max_energy:
+                max_energy = val
 
     logging.info(f"extractor: {num_lines} states, max_energy={max_energy} cm-1")
     return {"number_of_states": num_lines, "max_energy": max_energy}
@@ -163,14 +160,12 @@ def _load_state_energies(work_dir: Path, iso_slug: str, ds_name: str) -> dict[in
     if not states_files:
         return {}
     energies: dict[int, float] = {}
-    with tempfile.TemporaryDirectory() as tmpdir:
-        path = _open_maybe_bz2(states_files[0], tmpdir)
-        with open(path, "r", encoding="utf-8") as f:
-            for line in f:
-                stripped = line.strip()
-                if stripped:
-                    cols = stripped.split()
-                    energies[int(cols[0])] = float(cols[1])
+    with _open_maybe_bz2(states_files[0]) as f:
+        for line in f:
+            stripped = line.strip()
+            if stripped:
+                cols = stripped.split()
+                energies[int(cols[0])] = float(cols[1])
     return energies
 
 
@@ -187,14 +182,12 @@ def extract_transitions_info(work_dir: Path, iso_slug: str, ds_name: str) -> dic
 
     # Detect column count from first non-empty line
     has_wavenumber_col = False
-    with tempfile.TemporaryDirectory() as tmpdir:
-        first_path = _open_maybe_bz2(trans_files[0], tmpdir)
-        with open(first_path, "r", encoding="utf-8") as f:
-            for line in f:
-                stripped = line.strip()
-                if stripped:
-                    has_wavenumber_col = len(stripped.split()) >= 4
-                    break
+    with _open_maybe_bz2(trans_files[0]) as f:
+        for line in f:
+            stripped = line.strip()
+            if stripped:
+                has_wavenumber_col = len(stripped.split()) >= 4
+                break
 
     # 3-column format: load state energies to compute wavenumber
     state_energies: dict[int, float] = {}
@@ -204,26 +197,24 @@ def extract_transitions_info(work_dir: Path, iso_slug: str, ds_name: str) -> dic
 
     total_lines = 0
     max_wavenumber = 0.0
-    with tempfile.TemporaryDirectory() as tmpdir:
-        for raw_path in trans_files:
-            path = _open_maybe_bz2(raw_path, tmpdir)
-            file_lines = 0
-            with open(path, "r", encoding="utf-8") as f:
-                for line in f:
-                    stripped = line.strip()
-                    if not stripped:
-                        continue
-                    total_lines += 1
-                    file_lines += 1
-                    cols = stripped.split()
-                    if has_wavenumber_col:
-                        nu = float(cols[3])
-                    else:
-                        id_u, id_l = int(cols[0]), int(cols[1])
-                        nu = abs(state_energies.get(id_u, 0.0) - state_energies.get(id_l, 0.0))
-                    if nu > max_wavenumber:
-                        max_wavenumber = nu
-            logging.debug(f"extractor: '{raw_path.name}' — {file_lines} transitions")
+    for raw_path in trans_files:
+        file_lines = 0
+        with _open_maybe_bz2(raw_path) as f:
+            for line in f:
+                stripped = line.strip()
+                if not stripped:
+                    continue
+                total_lines += 1
+                file_lines += 1
+                cols = stripped.split()
+                if has_wavenumber_col:
+                    nu = float(cols[3])
+                else:
+                    id_u, id_l = int(cols[0]), int(cols[1])
+                    nu = abs(state_energies.get(id_u, 0.0) - state_energies.get(id_l, 0.0))
+                if nu > max_wavenumber:
+                    max_wavenumber = nu
+        logging.debug(f"extractor: '{raw_path.name}' — {file_lines} transitions")
 
     logging.info(
         f"extractor: {total_lines} transitions across {len(trans_files)} file(s), "
@@ -275,9 +266,8 @@ def summarise_states_columns(work_dir: Path, iso_slug: str, ds_name: str) -> dic
     if not states_files:
         return {"first_rows": [], "columns": []}
 
-    with tempfile.TemporaryDirectory() as tmpdir:
-        path = _open_maybe_bz2(states_files[0], tmpdir)
-        df = pd.read_csv(path, sep=r"\s+", header=None, dtype=str, low_memory=False)
+    with _open_maybe_bz2(states_files[0]) as f:
+        df = pd.read_csv(f, sep=r"\s+", header=None, dtype=str, low_memory=False)
 
     # First 5 rows as an aligned string table (no index, no header)
     first_rows = df.head(5).to_string(index=False, header=False)

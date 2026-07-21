@@ -39,7 +39,19 @@ jobs:
       - run: python create_def.py --init samples/AloHa/work_dir
       - run: python create_def.py samples/AloHa/work_dir
 
-      - name: Diff build output against fetched reference
+      - name: Diff AloHa build output against fetched reference
         run: |
           python .github/scripts/check_aloha_ref.py samples/AloHa/work_dir/27Al-1H__AloHa samples/AloHa/work_dir/ref/27Al-1H__AloHa
           python .github/scripts/check_aloha_ref.py samples/AloHa/work_dir/27Al-2H__AloHa samples/AloHa/work_dir/ref/27Al-2H__AloHa
+
+      - name: Fetch Dozen sample data (12C-16O2)
+        run: python fetch_exomol_sample.py 12C-16O2 Dozen samples/Dozen/work_dir --trans-files 2
+
+      - name: Stage Dozen.inp into work dir
+        run: cp samples/Dozen/Dozen.inp samples/Dozen/work_dir/Dozen.inp
+
+      - run: python create_def.py --init samples/Dozen/work_dir
+      - run: python create_def.py samples/Dozen/work_dir
+
+      - name: Diff Dozen build output against fetched reference
+        run: python .github/scripts/check_dozen_ref.py samples/Dozen/work_dir/12C-16O2__Dozen samples/Dozen/work_dir/ref/12C-16O2__Dozen

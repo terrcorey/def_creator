@@ -14,6 +14,7 @@ import argparse
 import json
 import logging
 import sys
+import time
 import urllib.error
 import urllib.request
 from pathlib import Path
@@ -47,19 +48,28 @@ def _trans_filenames(dataset_stem: str, def_json: dict | None, trans_files: int 
     ]
 
 
-def _fetch(url: str, dest: Path) -> bool:
-    """Downloads url to dest unless dest already exists and is non-empty. Returns True on success."""
+def _fetch(url: str, dest: Path, retries: int = 2) -> bool:
+    """
+    Downloads url to dest unless dest already exists and is non-empty. Returns True on
+    success. Retries a couple of times on connection failure -- a bare attempt has been
+    seen to time out transiently against exomol.com on CI runners.
+    """
     if dest.exists() and dest.stat().st_size > 0:
         logging.info(f"fetch_exomol_sample: '{dest.name}' already cached, skipping")
         return True
     logging.info(f"fetch_exomol_sample: fetching '{url}'...")
-    try:
-        with urllib.request.urlopen(url, timeout=30) as response:
-            dest.write_bytes(response.read())
-        return True
-    except urllib.error.URLError as e:
-        logging.error(f"fetch_exomol_sample: FAILED '{url}': {e}")
-        return False
+    for attempt in range(retries + 1):
+        try:
+            with urllib.request.urlopen(url, timeout=30) as response:
+                dest.write_bytes(response.read())
+            return True
+        except urllib.error.URLError as e:
+            if attempt < retries:
+                logging.warning(f"fetch_exomol_sample: attempt {attempt + 1} failed for '{url}': {e} -- retrying")
+                time.sleep(2)
+            else:
+                logging.error(f"fetch_exomol_sample: FAILED '{url}': {e}")
+    return False
 
 
 def fetch_sample(iso_slug: str, dataset: str, dest_dir: Path, trans_files: int | None = None) -> bool:

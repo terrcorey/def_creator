@@ -50,7 +50,7 @@ def _get_standard_labels() -> dict[str, dict]:
 
 _INP_COMMENTS: dict = {
     "options": {
-        "shared_quantum_labels": "Set to true if all isotopologues share the same quantum label list",
+        "shared_quantum_labels": "Set to true if all isotopologues share the same states file structure",
     },
     "dataset": {
         "version_date": "Version date YYYYMMDD (auto-filled to today — edit to override)",
@@ -58,26 +58,29 @@ _INP_COMMENTS: dict = {
             "Base molecule SMILES, no isotope mass numbers (e.g. [Al][H] for AlH, C=O for H2CO).",
             "Auto-derived for diatomics and all-distinct-element molecules — verify topology.",
             "Leave blank and fill 'inchi' below if you prefer to provide InChI directly.",
+            "Lookup: https://en.wikipedia.org/wiki/Simplified_Molecular_Input_Line_Entry_System#Description"
         ],
         "inchi": [
             "Base molecule InChI — auto-derived from smiles when smiles is filled.",
             "Fill manually only if smiles is blank, e.g.: InChI=1S/AlH/h1H",
         ],
         "doi": "Publication DOI, e.g.: 10.1093/mnras/stad3802  (leave blank if not yet published)",
-        "max_temperature": "Maximum temperature (K) this line list is valid for (author-stated)",
+        "max_temperature": "Maximum temperature (K) this line list is valid for (partition function coverage)",
     },
     "isotopologue": {
-        "cas_registry_number": "CAS number (optional) — auto-filled at build time if CAS_API_KEY is set, else leave blank or fill manually: https://commonchemistry.cas.org",
+        "cas_registry_number": "CAS number (optional) — will attempt to auto-fill at build time. Leave blank if not applicable or fill manually: https://commonchemistry.cas.org",
         "point_group": "Symmetry group (e.g. C, Cs, C2v, Dinfh)",
-        "irreps": "Irreducible representations as label:degeneracy pairs (e.g. Sigma+:12, Sigma-:12)",
+        "irreps": "Irreducible representations as label:nuclear spin degeneracy pairs (e.g. Sigma+:12, Sigma-:12)",
         "quantum_case_label": "Quantum coupling case — lookup: https://www.exomol.com/data/quantum-cases/",
-        "cooling_function_available": "true if a cooling function file is included for this isotopologue",
-        "specific_heat_available": "true if a specific heat file is included for this isotopologue",
-        "continuum": "true if photo-absorption continuum cross-sections are included for this isotopologue",
+        "cooling_function_available": "Set to true if .cf file(s) are available for this isotopologue",
+        "specific_heat_available": "Set to true if .cp file(s) are available for this isotopologue",
+        "continuum": "Set to true if .cont file(s) are available for this isotopologue",
     },
     "quantum_labels": [
-        "One label per line:  name  or  name = ffmt cfmt | description",
-        "Standard library labels auto-fill format and description.",
+        "Enter the appropriate quantum labels for each column in the states file.",
+        "  Standard library labels auto-fill format and description. Format as follows:",
+        "  quantum_type:name  or  quantum_type:name = fortran_fmt c_fmt | description",
+        r"  E.g. hunda:Lambda, Herzberg:v1 = I2 %2d | v1 symmetric stretch vibrational quantum number",
         "First 4 columns are always: ID  E  gtot  J",
         "  (manually change J → F for hyperfine datasets)",
         "Auto-detected from label names:",
@@ -86,6 +89,7 @@ _INP_COMMENTS: dict = {
         "  tau           → lifetime_available = true",
         "  gfactor       → lande_g_available = true",
         "  namespaces (e.g. hunda:, hundb:) count toward num_quantum_types",
+        "Lookup the list of valid quantum number types and labels: https://www.exomol.com/data/quantum-cases/"
     ],
 }
 

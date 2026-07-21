@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 import bz2
+import contextlib
 import logging
-import tempfile
 from pathlib import Path
 
 import pandas as pd
@@ -54,37 +54,40 @@ _VALIDATOR_ERRORS: dict[str, str] = {
 }
 
 
-def _open_maybe_bz2(path: Path, tmpdir: str) -> Path:
-    """Decompress .bz2 to tmpdir if needed; return a readable path."""
-    if path.suffix == ".bz2":
-        dest = Path(tmpdir) / path.stem
-        with open(path, "rb") as f_in:
-            data = bz2.decompress(f_in.read())
-        dest.write_bytes(data)
-        return dest
-    return path
+@contextlib.contextmanager
+def _open_maybe_bz2(path: Path):
+    """
+    Open a (possibly .bz2) file in text mode, streaming the decompression rather than
+    materializing the full decompressed content on disk or in memory — needed since
+    some datasets' .trans.bz2 files decompress to several GB.
+    """
+    f = bz2.open(path, "rt", encoding="utf-8") if path.suffix == ".bz2" else open(path, "r", encoding="utf-8")
+    try:
+        yield f
+    finally:
+        f.close()
 
 
-def _spot_check_states(path: Path) -> None:
-    df = pd.read_csv(path, sep=r"\s+", header=None, nrows=5)
+def _spot_check_states(f) -> None:
+    df = pd.read_csv(f, sep=r"\s+", header=None, nrows=5)
     if len(df.columns) < 4:
         raise ValidationError(
             _VALIDATOR_ERRORS["spot_check.states_too_few_cols"].format(
-                name=path.name, count=len(df.columns)
+                name=f.name, count=len(df.columns)
             )
         )
-    logging.debug(f"validator: '{path.name}' spot-check OK ({len(df.columns)} columns)")
+    logging.debug(f"validator: '{f.name}' spot-check OK ({len(df.columns)} columns)")
 
 
-def _spot_check_trans(path: Path) -> None:
-    df = pd.read_csv(path, sep=r"\s+", header=None, nrows=5)
+def _spot_check_trans(f) -> None:
+    df = pd.read_csv(f, sep=r"\s+", header=None, nrows=5)
     if len(df.columns) < 3:
         raise ValidationError(
             _VALIDATOR_ERRORS["spot_check.trans_too_few_cols"].format(
-                name=path.name, count=len(df.columns)
+                name=f.name, count=len(df.columns)
             )
         )
-    logging.debug(f"validator: '{path.name}' spot-check OK ({len(df.columns)} columns)")
+    logging.debug(f"validator: '{f.name}' spot-check OK ({len(df.columns)} columns)")
 
 
 def _data_files(work_dir: Path, iso_slug: str, ds_name: str, ext: str) -> list[Path]:
@@ -194,9 +197,10 @@ def validate_iso_files(work_dir: Path, iso_slug: str, ds_name: str) -> None:
             _VALIDATOR_ERRORS["iso.no_trans"].format(slug=iso_slug, ds_name=ds_name)
         )
 
-    with tempfile.TemporaryDirectory() as tmpdir:
-        _spot_check_states(_open_maybe_bz2(states_all[0], tmpdir))
-        for raw in trans_all:
-            _spot_check_trans(_open_maybe_bz2(raw, tmpdir))
+    with _open_maybe_bz2(states_all[0]) as f:
+        _spot_check_states(f)
+    for raw in trans_all:
+        with _open_maybe_bz2(raw) as f:
+            _spot_check_trans(f)
 
     logging.info(f"validator: '{iso_slug}' passed")

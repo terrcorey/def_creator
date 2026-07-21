@@ -21,6 +21,7 @@ venv/
 *.states.bz2
 *.trans
 *.trans.bz2
+*.pf
 
 # Scratch
 scratchpad.ipynb

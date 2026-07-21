@@ -4,9 +4,28 @@
 
 v1 targets a polished tool for generating the base ExoMol template only. Broadening and photodissociation data will get their own def-template structures in a future v2, once the tool is generalized to support multiple template types.
 
-1. **New fixture: CO2 `Dozen`, isotopologue `12C-16O2`** — fetches the full `.states`/`.pf` plus 2 of its 20 wavenumber-range `.trans` files. Exercises both the repeated-element manual SMILES/InChI entry path (CO2 has two oxygens, same as the `SO2` example already in the README) and multi-`.trans`-file handling, neither of which any current fixture covers
+1. **Shift validation from strict/blocking to assistive/overridable** — currently, `validate_inp` hard-blocks on anything in `_VALIDATION_ERRORS` (e.g. degeneracy checks, unknown quantum-case labels, malformed fields) with no way past it; only `_VALIDATION_WARNINGS` are soft (`y/N` to proceed). The next goal is to give users the freedom to force a build through with unusual/unexpected data if they intentionally want to, rather than every mismatch being a hard stop — the tool should suggest and flag issues, not just refuse. Needs a design pass on which current errors are genuinely un-buildable (e.g. missing required files) vs. which are really just "this looks wrong, are you sure?" checks that should become overridable
 
 `COmet` cannot rejoin the CI matrix via `fetch_exomol_sample.py` — it isn't a published/live dataset on exomol.com yet, so there's nothing there to fetch. Revisit if/when it's published.
+
+## [0.9.0] — 2026-07-21 — CO2 `Dozen` fixture + two real bugs it exposed
+
+### Added
+- **New fixture: CO2 `Dozen`, isotopologue `12C-16O2`** — fetches the full `.states`/`.pf` plus 2 of its 20 wavenumber-range `.trans` files. First fixture to exercise the repeated-element manual SMILES/InChI entry path (CO2 has two oxygens) and multi-`.trans`-file handling. Wired into CI via `.github/scripts/check_dozen_ref.py`
+- **`fetch_exomol_sample.py` retries transient connection failures** — `_fetch()` retries a couple of times before giving up. Found via a real Windows CI failure on the v0.8.0 run: two separate downloads hit a WinError 10060 connection timeout against exomol.com, while the identical URLs succeeded fine on macOS/Ubuntu in the same run and on every other fetch in the same job — a transient network blip, not a platform bug, but one a single stalled connection shouldn't be able to fail the whole job over
+
+### Fixed
+- **`_open_maybe_bz2` decompressed entire `.bz2` files into a temp directory before use**, even when the caller only needed to peek at a handful of lines — harmless for AloHa/COmet's small files, but `Dozen`'s `.trans.bz2` files decompress to ~1.3GB each, which blew past this machine's 3.1GB tmpfs `/tmp` and crashed `--init`. Now streams decompression via `bz2.open` instead, so memory/disk usage no longer scales with file size; `tempfile.TemporaryDirectory()` removed from all 6 call sites across `validator.py`/`extractor.py`
+- **`.def` isotope list wrote one "Isotope number/Element symbol" line per atom instead of per unique element** — CO2 (3 atoms, 2 unique elements: C, O, O) exposed this; AloHa/COmet never caught it since both are distinct-element diatomics where the two counts are the same. Now dedupes to match the real ExoMol `.def` convention and this tool's own (already-correct) `.def.json` output
+- **`.inp` template quantum-labels comment block silently merged two lines into one** — a missing comma in `inp_handler.py`'s `_INP_COMMENTS["quantum_labels"]` list caused Python's implicit string-literal concatenation to join an example line into the next one
+
+### Changed
+- **`.inp` template comment wording polish** — clarified `cas_registry_number`/`irreps`/`cooling_function_available`/`specific_heat_available`/`continuum`/quantum-labels comment text, added a SMILES lookup link and a quantum-cases lookup link
+
+### Verified
+- `Dozen`/`12C-16O2` build matches the real published reference exactly outside three documented, non-fixable gaps: CAS registry number (live-queried CAS Common Chemistry registers CO2's neutral molecule, its anion, and its dimer all under the same InChIKey *and* the same reported InChI — confirmed by pulling each candidate's detail record — so the existing ambiguous-match guard correctly declines to guess); the InChI isotope-layer suffix (this tool adds one, matching AlH's tested behavior and its real published `.def`; Dozen's real published `.def` omits it — a difference in upstream dataset curation, not this tool); and transition counts / `max_energy` (expected, since only 2 of 20 `.trans` files were fetched and `max_energy` there is an author-curated "complete-up-to" threshold, not the literal maximum energy in the `.states` file)
+- AloHa (both isotopologues) and COmet rebuilt clean after both bug fixes — no regression; the atom-dedup fix is a no-op for both since they're distinct-element diatomics
+- Full fetch → stage → `--init` → build → reference-check pipeline run end-to-end locally for `Dozen`, matching what CI now runs
 
 ## [0.8.0] — 2026-07-21 — AloHa fetch-on-demand + multi-isotopologue fixture
 

@@ -78,12 +78,15 @@ def _build_lines(d: dict) -> list[str]:
     out.append(_fmt_line(iso.get("inchi") or "", "In-ChI of molecule"))
     out.append(_fmt_line(iso.get("inchikey") or "", "In-ChI key of molecule"))
 
-    # Atom counts and isotope list (reconstructed from slug to avoid storing in JSON)
+    # Atom counts (reconstructed from slug to avoid storing in JSON) and unique-element
+    # isotope list — ExoMol's .def lists each distinct element once (e.g. CO2 -> C, O),
+    # not once per atom, even though "Number of atoms" counts every atom (e.g. 3 for CO2)
     iso_slug = iso.get("iso_slug", "")
     atom_list, _ = extractor.expand_slug_atoms(iso_slug) if iso_slug else ([], 0)
+    unique_elements = list(dict.fromkeys(atom_list))
     n_atoms = atoms.get("number_of_atoms", 0)
     out.append(_fmt_line(n_atoms, "Number of atoms"))
-    for i, (mass_num, symbol) in enumerate(atom_list, start=1):
+    for i, (mass_num, symbol) in enumerate(unique_elements, start=1):
         out.append(_fmt_line(mass_num, f"Isotope number {i}"))
         out.append(_fmt_line(symbol, f"Element symbol {i}"))
 
