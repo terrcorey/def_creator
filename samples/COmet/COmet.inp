@@ -21,18 +21,12 @@ shared_quantum_labels = false
 #                              Fill manually only if smiles is blank, e.g.: InChI=1S/AlH/h1H
 # doi                          Publication DOI, e.g.: 10.1093/mnras/stad3802  (leave blank if not yet published)
 # max_temperature              Maximum temperature (K) this line list is valid for (author-stated)
-# cooling_function_available   true if a cooling function file is included
-# specific_heat_available      true if a specific heat file is included
-# continuum                    true if photo-absorption continuum cross-sections are included
 #------------------------------input------------------------------
 version_date               = 20260709
 smiles                     = [C][O+]
 inchi                      = InChI=1S/CO/c1-2/q+1
-doi                        = 
+doi                        =
 max_temperature            = 5000
-cooling_function_available = false
-specific_heat_available    = false
-continuum                  = false
 
 
 #==============================================================
@@ -48,11 +42,17 @@ continuum                  = false
 # point_group           Symmetry group (e.g. C, Cs, C2v, Dinfh) — lookup: https://www.exomol.com
 # irreps                Irreducible representations as label:degeneracy pairs (e.g. Sigma+:12, Sigma-:12)
 # quantum_case_label    Quantum coupling case — lookup: https://www.exomol.com/data/quantum-cases/
+# cooling_function_available   true if a cooling function file is included for this isotopologue
+# specific_heat_available      true if a specific heat file is included for this isotopologue
+# continuum                    true if photo-absorption continuum cross-sections are included for this isotopologue
 #------------------------------input------------------------------
-cas_registry_number = 
-point_group         = C
-irreps              = Sigma+:1, Sigma-:1
-quantum_case_label  = dos
+cas_registry_number         =
+point_group                 = C
+irreps                      = Sigma+:1, Sigma-:1
+quantum_case_label          = dos
+cooling_function_available  = false
+specific_heat_available     = false
+continuum                   = false
 
 # ---- States file preview (12C-16O_p) ----------------------------------------
 #  First 5 rows:

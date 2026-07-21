@@ -37,12 +37,18 @@ _REQUIRED_PATHS = [
     ("partition_function", "partition_function_step_size"),
 ]
 
-# Fields that are optional (omitted from output if None)
+# Fields that are optional (not required for validate_complete to pass)
 _OPTIONAL_PATHS = {
     ("isotopologue", "inchi"),
     ("isotopologue", "inchikey"),
     ("isotopologue", "cas_registry_number"),
     ("dataset", "states", "uncertainty_description"),
+}
+
+# Fields ExoMol's own .def.json omits entirely when absent, rather than writing null
+# (unlike e.g. uncertainty_description, which ExoMol writes as null when absent)
+_OMIT_IF_NULL_PATHS = {
+    ("isotopologue", "cas_registry_number"),
 }
 
 
@@ -129,3 +135,16 @@ def validate_complete(merged: dict, iso_slug: str) -> list[str]:
     else:
         logging.info(f"merger: '{iso_slug}' all required fields present")
     return missing
+
+
+def strip_null_optional(merged: dict) -> dict:
+    """
+    Removes fields in _OMIT_IF_NULL_PATHS whose value is None, so the output
+    .def.json omits them entirely rather than writing null — matching
+    ExoMol's own published format for those specific fields.
+    """
+    for path in _OMIT_IF_NULL_PATHS:
+        parent = _get_nested(merged, path[:-1]) if len(path) > 1 else merged
+        if isinstance(parent, dict) and parent.get(path[-1]) is None:
+            parent.pop(path[-1], None)
+    return merged

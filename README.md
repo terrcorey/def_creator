@@ -143,9 +143,6 @@ All files in a set must have the same column format (3-column or 4-column). The 
 | `inchi`                       | Base molecule InChI — auto-derived from `smiles`; or fill manually if `smiles` is blank |
 | `doi`                         | Publication DOI (leave blank if not yet published)                                    |
 | `max_temperature`             | Maximum temperature of the linelist in K (author-stated)                              |
-| `cooling_function_available`  | `true` / `false`                                                                      |
-| `specific_heat_available`     | `true` / `false`                                                                      |
-| `continuum`                   | `true` if photo-absorption continuum cross-sections are included                      |
 
 **`[isotopologue.<iso_slug>]`** — one section per isotopologue
 
@@ -155,6 +152,9 @@ All files in a set must have the same column format (3-column or 4-column). The 
 | `point_group`                 | Symmetry group (e.g. `C`, `Cs`, `C2v`, `Dinfh`)                                      |
 | `irreps`                      | Irreducible representations as `label:degeneracy` pairs, e.g. `Sigma+:12, Sigma-:12` |
 | `quantum_case_label`          | Quantum coupling case — one of: `dcs`, `dos`, `lpcs`, `lpos`, `asymcs`, `asymos`, `stos`, `stcs`, `sphcs`, `sphos` |
+| `cooling_function_available`  | `true` / `false` — this isotopologue has a cooling function file                     |
+| `specific_heat_available`     | `true` / `false` — this isotopologue has a specific heat file                        |
+| `continuum`                   | `true` if photo-absorption continuum cross-sections are included for this isotopologue |
 
 **SMILES and InChI/InChIKey** are entered once at the `[dataset]` level. Isotope mass numbers are added to the SMILES automatically for each isotopologue at build time. Two workflows are supported:
 

@@ -4,11 +4,25 @@
 
 v1 targets a polished tool for generating the base ExoMol template only. Broadening and photodissociation data will get their own def-template structures in a future v2, once the tool is generalized to support multiple template types.
 
-1. **Migrate `AloHa` to fetch-on-demand** — remove its currently-committed `.states`/`.trans`/`ref/*.def*` from git; wire `fetch_exomol_sample.py` into `.github/workflows/ci.yml` as a setup step before `--init`/build, replacing the checked-in fixture files
-2. **New fixture: `AloHa` isotopologue `27Al-2H`** (AlD) — added alongside the existing `27Al-1H` to exercise the multi-isotopologue-per-dataset build path, which nothing currently in CI covers
-3. **New fixture: CO2 `Dozen`, isotopologue `12C-16O2`** — fetches the full `.states`/`.pf` plus 2 of its 20 wavenumber-range `.trans` files. Exercises both the repeated-element manual SMILES/InChI entry path (CO2 has two oxygens, same as the `SO2` example already in the README) and multi-`.trans`-file handling, neither of which any current fixture covers
+1. **New fixture: CO2 `Dozen`, isotopologue `12C-16O2`** — fetches the full `.states`/`.pf` plus 2 of its 20 wavenumber-range `.trans` files. Exercises both the repeated-element manual SMILES/InChI entry path (CO2 has two oxygens, same as the `SO2` example already in the README) and multi-`.trans`-file handling, neither of which any current fixture covers
 
 `COmet` cannot rejoin the CI matrix via `fetch_exomol_sample.py` — it isn't a published/live dataset on exomol.com yet, so there's nothing there to fetch. Revisit if/when it's published.
+
+## [0.8.0] — 2026-07-21 — AloHa fetch-on-demand + multi-isotopologue fixture
+
+### Changed
+- **`samples/AloHa` fixture migrated to fetch-on-demand** — its committed `.states`/`.trans` (plain and `.bz2`) and `ref/*.def*` files are no longer tracked in git; `.github/workflows/ci.yml` now fetches them via `fetch_exomol_sample.py` as a setup step before `--init`/build. `.gitignore` extended to cover `*.states.bz2`/`*.trans.bz2`, and the now-unused `ref/*.def` allowlist exception removed
+- **`cooling_function_available`, `specific_heat_available`, `continuum` moved from `[dataset]` to `[isotopologue.*]`** in the `.inp` format — these can genuinely differ per isotopologue (AlH's real published `continuum = true` vs AlD's `continuum = false`, within the same AloHa dataset), which the old dataset-level-only field couldn't express. **Breaking**: existing `.inp` files need these three keys moved from `[dataset]` into each `[isotopologue.*]` section. `samples/AloHa/AloHa.inp` and `samples/COmet/COmet.inp` updated accordingly. README's `.inp` field reference tables updated to match
+
+### Added
+- **New fixture: AloHa isotopologue `27Al-2H`** (AlD) — added alongside `27Al-1H` in a renamed `samples/AloHa/work_dir/` (was `samples/AloHa/27Al-1H/`), exercising the multi-isotopologue-per-dataset build path for the first time in CI. CI now fetches and diffs both isotopologues against their fetched references
+
+### Fixed
+- **`.def.json` always wrote `cas_registry_number: null`** for isotopologues without a CAS number, where ExoMol's real published format omits the key entirely (confirmed against AlD's fetched reference); by contrast, ExoMol does write `uncertainty_description` as `null` when absent, so omission isn't a blanket rule for every optional field. New `merger.strip_null_optional()` omits just `cas_registry_number` when absent, applied before writing `.def.json`
+
+### Verified
+- All three isotopologues (AlH and AlD from AloHa; CO+ from COmet) rebuild matching their real reference data (fetched for AloHa, local untracked file for COmet) after both fixes, via `.github/scripts/check_aloha_ref.py` for AloHa
+- AlD's real published data confirmed live via `fetch_exomol_sample.py`: `continuum = false` (vs AlH's `true`), 14 states-file columns (vs AlH's 16 — no `Auxiliary:SourceType`/`Auxiliary:Ecal`), `quantum_case_label = dcs` (vs AlH's `dos`)
 
 ## [0.7.0] — 2026-07-21 — ExoMol sample downloader
 

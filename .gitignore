@@ -15,12 +15,12 @@ venv/
 # Generated output files (reproducible from data + .inp)
 *.def
 *.def.json
-!samples/**/ref/*.def
-!samples/**/ref/*.def.json
 
 # Large data files
 *.states
+*.states.bz2
 *.trans
+*.trans.bz2
 
 # Scratch
 scratchpad.ipynb

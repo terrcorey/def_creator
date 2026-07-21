@@ -28,14 +28,18 @@ jobs:
 
       - run: pip install -r requirements.txt
 
+      - name: Fetch AloHa sample data (27Al-1H, 27Al-2H)
+        run: |
+          python fetch_exomol_sample.py 27Al-1H AloHa samples/AloHa/work_dir
+          python fetch_exomol_sample.py 27Al-2H AloHa samples/AloHa/work_dir
+
       - name: Stage AloHa.inp into work dir
-        run: cp samples/AloHa/AloHa.inp samples/AloHa/27Al-1H/AloHa.inp
+        run: cp samples/AloHa/AloHa.inp samples/AloHa/work_dir/AloHa.inp
 
-      - run: python create_def.py --init samples/AloHa/27Al-1H
-      - run: python create_def.py samples/AloHa/27Al-1H
+      - run: python create_def.py --init samples/AloHa/work_dir
+      - run: python create_def.py samples/AloHa/work_dir
 
-      - name: Diff build output against committed reference
-        run: >
-          python .github/scripts/check_aloha_ref.py
-          samples/AloHa/27Al-1H/27Al-1H__AloHa
-          samples/AloHa/27Al-1H/ref/27Al-1H__AloHa
+      - name: Diff build output against fetched reference
+        run: |
+          python .github/scripts/check_aloha_ref.py samples/AloHa/work_dir/27Al-1H__AloHa samples/AloHa/work_dir/ref/27Al-1H__AloHa
+          python .github/scripts/check_aloha_ref.py samples/AloHa/work_dir/27Al-2H__AloHa samples/AloHa/work_dir/ref/27Al-2H__AloHa

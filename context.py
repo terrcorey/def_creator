@@ -305,7 +305,7 @@ def run_build(ctx: DefContext) -> None:
         # Write completed .def.json and remove temp file
         final_json_path = ctx.def_json_path(iso_slug)
         with open(final_json_path, "w", encoding="utf-8") as f:
-            json.dump(merged, f, indent=4)
+            json.dump(merger.strip_null_optional(merged), f, indent=4)
         temp_path.unlink()
         logging.info(f"context: wrote '{final_json_path}', removed temp '{temp_path}'")
         print(f"  Wrote: {final_json_path}")

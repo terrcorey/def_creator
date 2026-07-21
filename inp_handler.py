@@ -65,15 +65,15 @@ _INP_COMMENTS: dict = {
         ],
         "doi": "Publication DOI, e.g.: 10.1093/mnras/stad3802  (leave blank if not yet published)",
         "max_temperature": "Maximum temperature (K) this line list is valid for (author-stated)",
-        "cooling_function_available": "true if a cooling function file is included",
-        "specific_heat_available": "true if a specific heat file is included",
-        "continuum": "true if photo-absorption continuum cross-sections are included",
     },
     "isotopologue": {
         "cas_registry_number": "CAS number (optional) — auto-filled at build time if CAS_API_KEY is set, else leave blank or fill manually: https://commonchemistry.cas.org",
         "point_group": "Symmetry group (e.g. C, Cs, C2v, Dinfh)",
         "irreps": "Irreducible representations as label:degeneracy pairs (e.g. Sigma+:12, Sigma-:12)",
         "quantum_case_label": "Quantum coupling case — lookup: https://www.exomol.com/data/quantum-cases/",
+        "cooling_function_available": "true if a cooling function file is included for this isotopologue",
+        "specific_heat_available": "true if a specific heat file is included for this isotopologue",
+        "continuum": "true if photo-absorption continuum cross-sections are included for this isotopologue",
     },
     "quantum_labels": [
         "One label per line:  name  or  name = ffmt cfmt | description",
@@ -131,8 +131,7 @@ _VALIDATION_ERRORS: dict[str, str] = {
     "dataset.missing_section": (
         "[dataset] section is missing.\n"
         "→ Add a [dataset] section with at minimum:\n"
-        "  doi, max_temperature, cooling_function_available,\n"
-        "  specific_heat_available, continuum"
+        "  doi, max_temperature"
     ),
     "dataset.version_date_blank": (
         "[dataset] version_date is blank.\n"
@@ -162,14 +161,6 @@ _VALIDATION_ERRORS: dict[str, str] = {
         '[dataset] max_temperature = "{val}" is not a number.\n'
         "→ Enter a numeric value in K, e.g.:  max_temperature = 5000"
     ),
-    "dataset.bool_flag_blank": (
-        "[dataset] {flag} is blank.\n"
-        "→ Use true or false."
-    ),
-    "dataset.bool_flag_invalid": (
-        '[dataset] {flag} = "{val}" is not a valid boolean.\n'
-        "→ Use true or false."
-    ),
     "dataset.smiles_invalid": (
         '[dataset] smiles = "{val}" could not be parsed by RDKit.\n'
         "→ Verify the SMILES is correct. Common issues:\n"
@@ -182,8 +173,17 @@ _VALIDATION_ERRORS: dict[str, str] = {
     "iso.section_missing": (
         "[isotopologue.{slug}] section is missing.\n"
         "→ Add a section [isotopologue.{slug}] containing:\n"
-        "  point_group, irreps, quantum_case_label\n"
+        "  point_group, irreps, quantum_case_label,\n"
+        "  cooling_function_available, specific_heat_available, continuum\n"
         "  (cas_registry_number is optional)"
+    ),
+    "iso.bool_flag_blank": (
+        "[isotopologue.{slug}] {flag} is blank.\n"
+        "→ Use true or false."
+    ),
+    "iso.bool_flag_invalid": (
+        '[isotopologue.{slug}] {flag} = "{val}" is not a valid boolean.\n'
+        "→ Use true or false."
     ),
     "iso.point_group_blank": (
         "[isotopologue.{slug}] point_group is blank.\n"
@@ -417,9 +417,6 @@ def generate_blank_inp(
         ("inchi",                      pre_inchi),
         ("doi",                        ""),
         ("max_temperature",            ""),
-        ("cooling_function_available", "false"),
-        ("specific_heat_available",    "false"),
-        ("continuum",                  "false"),
     ])
     out.append("")
     out.append("")
@@ -485,10 +482,13 @@ def generate_blank_inp(
                 out += _comment_lines(field, text, 21)
             out.append(input_separator)
         out += _align_section([
-            ("cas_registry_number", ""),
-            ("point_group",         ""),
-            ("irreps",              pre_irreps),
-            ("quantum_case_label",  ""),
+            ("cas_registry_number",        ""),
+            ("point_group",                ""),
+            ("irreps",                     pre_irreps),
+            ("quantum_case_label",         ""),
+            ("cooling_function_available", "false"),
+            ("specific_heat_available",    "false"),
+            ("continuum",                  "false"),
         ])
         out.append("")
 
@@ -752,14 +752,6 @@ def parse_inp(inp_path: Path) -> dict:
     if "inchi" in dataset_kv and dataset_kv["inchi"].strip():
         dataset_out["base_inchi"] = dataset_kv["inchi"].strip()
 
-    bool_flags = ("cooling_function_available", "specific_heat_available", "continuum")
-    for flag in bool_flags:
-        if flag in dataset_kv and dataset_kv[flag]:
-            try:
-                dataset_out[flag] = _parse_bool(dataset_kv[flag], flag)
-            except ValueError:
-                pass  # validate_inp will report the invalid value
-
     # Parse shared quantum labels — accept [quantum_labels] or first [quantum_labels.*] found
     shared_labels: list[dict] | None = None
     if shared_qn:
@@ -798,6 +790,12 @@ def parse_inp(inp_path: Path) -> dict:
                 pass  # validate_inp will report the invalid value
         if "quantum_case_label" in kv and kv["quantum_case_label"]:
             iso_out["quantum_case_label"] = kv["quantum_case_label"].strip()
+        for flag in ("cooling_function_available", "specific_heat_available", "continuum"):
+            if flag in kv and kv[flag]:
+                try:
+                    iso_out[flag] = _parse_bool(kv[flag], flag)
+                except ValueError:
+                    pass  # validate_inp will report the invalid value
 
         # Parse quantum labels
         if shared_qn and shared_labels is not None:
@@ -895,16 +893,6 @@ def validate_inp(inp_path: Path, known_iso_slugs: list[str]) -> tuple[list[str],
             except ValueError:
                 errors.append(_VALIDATION_ERRORS["dataset.max_temperature_not_number"].format(val=mt_val))
 
-        for flag in ("cooling_function_available", "specific_heat_available", "continuum"):
-            val = dataset_kv.get(flag, "").strip()
-            if not val:
-                errors.append(_VALIDATION_ERRORS["dataset.bool_flag_blank"].format(flag=flag))
-            else:
-                try:
-                    _parse_bool(val, flag)
-                except ValueError:
-                    errors.append(_VALIDATION_ERRORS["dataset.bool_flag_invalid"].format(flag=flag, val=val))
-
     smiles_ds = dataset_kv.get("smiles", "").strip()
     if smiles_ds:
         import inchi as _inchi_mod
@@ -976,6 +964,16 @@ def validate_inp(inp_path: Path, known_iso_slugs: list[str]) -> tuple[list[str],
                 errors.append(_VALIDATION_ERRORS["iso.quantum_case_label_invalid"].format(
                     slug=iso_slug, val=qcl_val, valid_cases=valid_cases_str
                 ))
+
+            for flag in ("cooling_function_available", "specific_heat_available", "continuum"):
+                val = iso_kv.get(flag, "").strip()
+                if not val:
+                    errors.append(_VALIDATION_ERRORS["iso.bool_flag_blank"].format(slug=iso_slug, flag=flag))
+                else:
+                    try:
+                        _parse_bool(val, flag)
+                    except ValueError:
+                        errors.append(_VALIDATION_ERRORS["iso.bool_flag_invalid"].format(slug=iso_slug, flag=flag, val=val))
 
         # ── [quantum_labels.*] ───────────────────────────────────────────────
         if shared_qn:
