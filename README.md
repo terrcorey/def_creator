@@ -60,6 +60,20 @@ python create_def.py [--init] [--force] [--no-verbose-input] [--log-level LEVEL]
 | `--no-verbose-input` | verbose | Omit explanatory comments from the generated `.inp`; states preview is always retained |
 | `--log-level LEVEL` | `INFO` | Logging verbosity: `DEBUG`, `INFO`, `WARNING`, `ERROR` |
 
+## Fetching ExoMol sample data (dev/CI)
+
+`fetch_exomol_sample.py` is a standalone script, separate from `create_def.py`, that downloads a dataset/isotopologue's `.states.bz2`/`.trans.bz2`/`.pf` files plus its published reference `.def`/`.def.json` from ExoMol's public API — for stocking local test fixtures or CI without committing large data files to git.
+
+```bash
+python fetch_exomol_sample.py <iso_slug> <dataset> <dest_dir> [--trans-files N] [--log-level LEVEL]
+```
+
+- The molecule name (e.g. `AlH`, `CO2`) is derived automatically from `iso_slug` — no need to look it up.
+- Files already present (non-empty) in `dest_dir` are left alone, so re-running only fetches what's missing.
+- `.def`/`.def.json` are always fetched into `dest_dir/ref/`.
+- For datasets with split `.trans` files (e.g. a 20-file line list), `--trans-files N` is required and fetches the first `N` wavenumber-range files, ascending from 0 cm⁻¹; omitting it errors out naming the total file count.
+- A failed download is logged and skipped rather than stopping the rest; the script exits non-zero if anything was never obtained.
+
 ## Working directory structure
 
 All data files live flat in a single working directory. Files are identified by their names — no subdirectory structure is required.

@@ -4,11 +4,27 @@
 
 v1 targets a polished tool for generating the base ExoMol template only. Broadening and photodissociation data will get their own def-template structures in a future v2, once the tool is generalized to support multiple template types.
 
-1. **ExoMol sample downloader** — a general-purpose, standalone script (kept separate from `create_def.py`, which end users never need for this) that fetches a dataset/isotopologue's `.states`/`.trans`/`.pf` files, and its published reference `.def`/`.def.json`, from ExoMol's public API into a local cache directory — checking that directory first and only downloading what's missing. Nothing it fetches is committed to the repo; CI runs it as a setup step before `--init`/build for each fixture.
-   - **`AloHa` migrates to this pattern** — its currently-committed `.states`/`.trans`/`ref/*.def*` are removed from git in favor of fetch-on-demand, so every CI fixture follows one consistent approach
-   - **New fixture: `AloHa` isotopologue `27Al-2H`** (AlD) — added alongside the existing `27Al-1H` to exercise the multi-isotopologue-per-dataset build path, which nothing currently in CI covers
-   - **New fixture: CO2 `Dozen`, isotopologue `12C-16O2`** — a recent (September 2025) 12-isotopologue CO2 line list; fetches the full `.states`/`.pf` plus 2 of its 20 wavenumber-range `.trans` files. Exercises both the repeated-element manual SMILES/InChI entry path (CO2 has two oxygens, same as the `SO2` example already in the README) and multi-`.trans`-file handling, neither of which any current fixture covers
-   - Once this exists, `COmet` could rejoin the CI matrix the same way — fetched rather than committed — sidestepping its 589MB `.trans` file; not committed to for the next session, just noted as a natural follow-on
+1. **Migrate `AloHa` to fetch-on-demand** — remove its currently-committed `.states`/`.trans`/`ref/*.def*` from git; wire `fetch_exomol_sample.py` into `.github/workflows/ci.yml` as a setup step before `--init`/build, replacing the checked-in fixture files
+2. **New fixture: `AloHa` isotopologue `27Al-2H`** (AlD) — added alongside the existing `27Al-1H` to exercise the multi-isotopologue-per-dataset build path, which nothing currently in CI covers
+3. **New fixture: CO2 `Dozen`, isotopologue `12C-16O2`** — fetches the full `.states`/`.pf` plus 2 of its 20 wavenumber-range `.trans` files. Exercises both the repeated-element manual SMILES/InChI entry path (CO2 has two oxygens, same as the `SO2` example already in the README) and multi-`.trans`-file handling, neither of which any current fixture covers
+
+`COmet` cannot rejoin the CI matrix via `fetch_exomol_sample.py` — it isn't a published/live dataset on exomol.com yet, so there's nothing there to fetch. Revisit if/when it's published.
+
+## [0.7.0] — 2026-07-21 — ExoMol sample downloader
+
+### Added
+- **`fetch_exomol_sample.py`** — standalone script, separate from `create_def.py`, that downloads a dataset/isotopologue's `.states.bz2`/`.trans.bz2`/`.pf` files plus its published reference `.def`/`.def.json` from ExoMol's public API (`https://www.exomol.com/db/...`) into a local directory. Molecule name is derived from `iso_slug` via the existing `extractor.slug_to_hill_formula_and_charge` rather than a new lookup. Files already present (non-empty) in the destination are left alone, so re-running only fetches what's missing
+  - `--trans-files N` selects how many wavenumber-range `.trans.bz2` files to fetch for split datasets (ascending from 0 cm⁻¹); required whenever a dataset has more than one (`.def.json`'s `dataset.transitions.number_of_transition_files` > 1) — omitting it errors out naming the total file count rather than guessing
+  - A failed download (404, network error) is logged with the failing URL and skipped rather than stopping the whole run; the script exits non-zero if any file was never obtained
+  - `.def`/`.def.json` are always fetched into a `dest_dir/ref/` subdirectory, matching the existing `samples/*/ref/` convention
+  - **README** — new section documenting the script's CLI and behavior
+
+### Verified
+- Live-fetched `27Al-1H`/`AloHa` end-to-end: `.states.bz2`/`.trans.bz2`/`.pf` are byte-identical to the committed `samples/AloHa/27Al-1H` fixture; `ref/.def`/`.def.json` are structurally identical (`json.load` equality) — the only raw-byte differences are CRLF line endings and JSON indentation currently served by exomol.com, not a content mismatch
+- Live-fetched `12C-16O2`/`Dozen` (a 20-file split-`.trans` dataset): omitting `--trans-files` errors out naming the file count rather than guessing; `--trans-files 2` fetches exactly the two lowest-range files (`__00000-01000`, `__01000-02000`)
+- A bad iso_slug/dataset (`99Zz-1H`/`NotReal`) 404s on every file, each logged individually, script exits 1
+- Re-running against an already-populated directory skips every file with no network calls
+- `test_fetch_exomol_sample.py` (mocked, no network): trans-filename selection for single-file vs. split datasets, missing-`--trans-files` error, a failing fetch not blocking the rest, and cache-skip behavior
 
 ## [0.6.2] — 2026-07-16 — Python 3.12 install fix
 
