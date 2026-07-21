@@ -68,26 +68,26 @@ def _open_maybe_bz2(path: Path):
         f.close()
 
 
-def _spot_check_states(f) -> None:
+def _spot_check_states(f, name: str) -> None:
     df = pd.read_csv(f, sep=r"\s+", header=None, nrows=5)
     if len(df.columns) < 4:
         raise ValidationError(
             _VALIDATOR_ERRORS["spot_check.states_too_few_cols"].format(
-                name=f.name, count=len(df.columns)
+                name=name, count=len(df.columns)
             )
         )
-    logging.debug(f"validator: '{f.name}' spot-check OK ({len(df.columns)} columns)")
+    logging.debug(f"validator: '{name}' spot-check OK ({len(df.columns)} columns)")
 
 
-def _spot_check_trans(f) -> None:
+def _spot_check_trans(f, name: str) -> None:
     df = pd.read_csv(f, sep=r"\s+", header=None, nrows=5)
     if len(df.columns) < 3:
         raise ValidationError(
             _VALIDATOR_ERRORS["spot_check.trans_too_few_cols"].format(
-                name=f.name, count=len(df.columns)
+                name=name, count=len(df.columns)
             )
         )
-    logging.debug(f"validator: '{f.name}' spot-check OK ({len(df.columns)} columns)")
+    logging.debug(f"validator: '{name}' spot-check OK ({len(df.columns)} columns)")
 
 
 def _data_files(work_dir: Path, iso_slug: str, ds_name: str, ext: str) -> list[Path]:
@@ -198,9 +198,9 @@ def validate_iso_files(work_dir: Path, iso_slug: str, ds_name: str) -> None:
         )
 
     with _open_maybe_bz2(states_all[0]) as f:
-        _spot_check_states(f)
+        _spot_check_states(f, states_all[0].name)
     for raw in trans_all:
         with _open_maybe_bz2(raw) as f:
-            _spot_check_trans(f)
+            _spot_check_trans(f, raw.name)
 
     logging.info(f"validator: '{iso_slug}' passed")

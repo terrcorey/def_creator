@@ -8,6 +8,14 @@ v1 targets a polished tool for generating the base ExoMol template only. Broaden
 
 `COmet` cannot rejoin the CI matrix via `fetch_exomol_sample.py` — it isn't a published/live dataset on exomol.com yet, so there's nothing there to fetch. Revisit if/when it's published.
 
+## [0.9.1] — 2026-07-21 — Fix Python 3.12 CI crash from the v0.9.0 streaming fix
+
+### Fixed
+- **`--init` crashed on every CI platform** with `AttributeError: 'BZ2File' object has no attribute 'name'` — v0.9.0's streaming rewrite of `_open_maybe_bz2` read `.name` off the bz2-wrapped file handle for error/debug messages in `_spot_check_states`/`_spot_check_trans`. `bz2.BZ2File` exposes `.name` on Python 3.13 but not on 3.12, which is what CI actually runs (and what local testing didn't catch, since it ran on 3.13). Fixed by passing the filename explicitly from the caller's already-available `Path.name` instead of reading it off the file handle
+
+### Verified
+- Full fetch → `--init` → build → reference-check pipeline for AloHa (both isotopologues) run clean inside a Python 3.12 environment with the exact pinned dependencies from `requirements.txt` (`mendeleev==0.16.2`, `rdkit==2024.3.5`) — reproducing and confirming the fix required matching CI's actual interpreter version, since the local dev environment (Python 3.13, unpinned newer dependency versions) never hit this bug at all
+
 ## [0.9.0] — 2026-07-21 — CO2 `Dozen` fixture + two real bugs it exposed
 
 ### Added
