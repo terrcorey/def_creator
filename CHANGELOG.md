@@ -6,6 +6,11 @@ v1 targets a polished tool for generating the base ExoMol template only. Broaden
 
 `COmet` cannot rejoin the CI matrix via `fetch_exomol_sample.py` — it isn't a published/live dataset on exomol.com yet, so there's nothing there to fetch. Revisit if/when it's published.
 
+## [0.10.2] — 2026-07-22 — Fix Windows CI failure in --force smoke test
+
+### Fixed
+- **`.github/scripts/check_force_override.py` failed on `windows-latest` (both Python versions)** — it read/wrote `AloHa.inp` via `Path.read_text()`/`write_text()` with no explicit encoding, so on Windows' non-UTF-8 default locale codec the em-dashes in `AloHa.inp`'s header comments broke decoding, its exact-string `.replace()` calls silently no-op'd, and the test `.inp` was never actually corrupted — so the "must block without `--force`" assertion failed. Now pins `encoding="utf-8"` on both calls, matching the convention already followed everywhere else in this repo (`extractor.py`, `inp_handler.py`)
+
 ## [0.10.1] — 2026-07-22 — CI coverage for --force
 
 ### Added

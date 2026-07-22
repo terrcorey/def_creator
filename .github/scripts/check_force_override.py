@@ -32,14 +32,14 @@ init = run("--init")
 assert init.returncode == 0, f"--init failed:\n{init.stdout}{init.stderr}"
 
 inp_path = scratch / f"{ds_name}.inp"
-head, sep, tail = inp_path.read_text().partition(f"[isotopologue.27Al-2H]")
+head, sep, tail = inp_path.read_text(encoding="utf-8").partition(f"[isotopologue.27Al-2H]")
 head = (
     head.replace("max_temperature            = 5000", "max_temperature            = not-a-number")
     .replace("point_group                 = C", "point_group                 = ")
     .replace("irreps                      = Sigma+:12, Sigma-:12", "irreps                      = Sigma+:99, Sigma-:99")
     .replace("quantum_case_label          = dos", "quantum_case_label          = not-a-real-case")
 )
-inp_path.write_text(head + sep + tail)
+inp_path.write_text(head + sep + tail, encoding="utf-8")
 
 blocked = run()
 assert blocked.returncode == 1, f"expected build to block without --force, got {blocked.returncode}:\n{blocked.stdout}"
