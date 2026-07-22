@@ -4,12 +4,17 @@
 
 v1 targets a polished tool for generating the base ExoMol template only. Broadening and photodissociation data will get their own def-template structures in a future v2, once the tool is generalized to support multiple template types.
 
-1. **Extend CI coverage** — three gaps identified after shipping `--force` in 0.10.0:
-   - `ci.yml` hardcodes Python 3.12 only, with no matrix dimension for interpreter version. The README claims "Requires Python 3.8+" but nothing has continuously verified that floor since it was hand-tested via podman back in v0.5.4 — add Python 3.8 as a second matrix dimension alongside 3.12, across all three OSes (full 3×2 matrix)
-   - `test_fetch_exomol_sample.py` and `test_force_override.py` are self-checks that exist but are never actually invoked by `ci.yml` — wire both in as CI steps, placed right after `pip install` so they fail fast before any network fetch is spent
-   - Nothing in CI exercises the `--force` path at all — add `.github/scripts/check_force_override.py` (same standalone-script pattern as `check_aloha_ref.py`), riding along in the existing AloHa job step reusing already-fetched `27Al-1H` data: corrupt a copy of `AloHa.inp`'s `27Al-1H` section (non-numeric `max_temperature`, blank `point_group`, out-of-range irreps degeneracy, invalid `quantum_case_label`), assert the build exits 1 without `--force`, then exits 0 with `--force` and writes the raw/blank values through correctly (including no literal `"None"` from a blank required field)
-
 `COmet` cannot rejoin the CI matrix via `fetch_exomol_sample.py` — it isn't a published/live dataset on exomol.com yet, so there's nothing there to fetch. Revisit if/when it's published.
+
+## [0.10.1] — 2026-07-22 — CI coverage for --force
+
+### Added
+- **`ci.yml` now tests Python 3.8 alongside 3.12**, across all three OSes (full 3×2 matrix) — the README claims "Requires Python 3.8+" but nothing had continuously verified that floor since it was hand-tested via podman back in v0.5.4
+- **`test_fetch_exomol_sample.py` and `test_force_override.py` wired into `ci.yml`** — these self-checks already existed but were never actually invoked; they now run right after `pip install`, failing fast before any network fetch is spent
+- **`.github/scripts/check_force_override.py`** — new CI step exercising the `--force` path end to end, riding on the existing AloHa job's already-fetched `27Al-1H` data. Corrupts a scratch copy of `AloHa.inp`'s `27Al-1H` section (non-numeric `max_temperature`, blank `point_group`, out-of-range irreps degeneracy, invalid `quantum_case_label`), asserts the build exits 1 without `--force`, then exits 0 with `--force` and writes the raw/blank values through correctly with no literal `"None"`
+
+### Verified
+- All three new/changed CI steps run clean locally against the already-fetched `samples/AloHa/work_dir` fixture; the existing `--init` → build → ref-diff pipeline for AloHa still matches with no regression
 
 ## [0.10.0] — 2026-07-22 — Assistive/overridable validation via --force
 

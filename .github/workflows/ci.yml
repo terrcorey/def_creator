@@ -13,6 +13,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
+        python-version: ["3.8", "3.12"]
     runs-on: ${{ matrix.os }}
     defaults:
       run:
@@ -24,9 +25,14 @@ jobs:
 
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
+          python-version: ${{ matrix.python-version }}
 
       - run: pip install -r requirements.txt
+
+      - name: Run self-checks (no network)
+        run: |
+          python test_fetch_exomol_sample.py
+          python test_force_override.py
 
       - name: Fetch AloHa sample data (27Al-1H, 27Al-2H)
         run: |
@@ -43,6 +49,9 @@ jobs:
         run: |
           python .github/scripts/check_aloha_ref.py samples/AloHa/work_dir/27Al-1H__AloHa samples/AloHa/work_dir/ref/27Al-1H__AloHa
           python .github/scripts/check_aloha_ref.py samples/AloHa/work_dir/27Al-2H__AloHa samples/AloHa/work_dir/ref/27Al-2H__AloHa
+
+      - name: Verify --force overrides validation errors
+        run: python .github/scripts/check_force_override.py samples/AloHa/work_dir
 
       - name: Fetch Dozen sample data (12C-16O2)
         run: python fetch_exomol_sample.py 12C-16O2 Dozen samples/Dozen/work_dir --trans-files 2
