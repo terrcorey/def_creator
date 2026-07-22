@@ -26,8 +26,16 @@ def main() -> None:
     parser.add_argument("work_dir", type=Path, help="Path to the dataset directory")
     parser.add_argument("--init", action="store_true", help="Run initialisation step")
     parser.add_argument(
-        "--force", action="store_true",
+        "--reset-input", action="store_true",
         help="With --init: delete existing .inp and temp cache files before regenerating",
+    )
+    parser.add_argument(
+        "--force", action="store_true",
+        help=(
+            "Build past validation errors and missing required fields instead of blocking, "
+            "writing best-effort output. Disables safety checks — only use this if you "
+            "understand the data and are prepared to fix up the result by hand."
+        ),
     )
     parser.add_argument(
         "--no-verbose-input", dest="verbose_input",
@@ -62,9 +70,9 @@ def main() -> None:
     )
 
     if args.init:
-        context.run_init(ctx, verbose_input=args.verbose_input, force=args.force)
+        context.run_init(ctx, verbose_input=args.verbose_input, reset_input=args.reset_input)
     else:
-        context.run_build(ctx)
+        context.run_build(ctx, force=args.force)
 
 
 if __name__ == "__main__":

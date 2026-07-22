@@ -743,14 +743,16 @@ def parse_inp(inp_path: Path) -> dict:
         try:
             dataset_out["version"] = int(dataset_kv["version_date"])
         except ValueError:
-            pass  # validate_inp will report the invalid value
+            # invalid but non-blank — validate_inp reports it; kept as raw text so --force
+            # can still write it through instead of dropping the field entirely
+            dataset_out["version"] = dataset_kv["version_date"]
     if "doi" in dataset_kv:
         dataset_out["doi"] = dataset_kv["doi"] or None
     if "max_temperature" in dataset_kv and dataset_kv["max_temperature"]:
         try:
             dataset_out["max_temperature"] = float(dataset_kv["max_temperature"])
         except ValueError:
-            pass  # validate_inp will report the invalid value
+            dataset_out["max_temperature"] = dataset_kv["max_temperature"]  # see version_date, above
     if "smiles" in dataset_kv and dataset_kv["smiles"].strip():
         dataset_out["smiles"] = dataset_kv["smiles"].strip()
     if "inchi" in dataset_kv and dataset_kv["inchi"].strip():
@@ -799,7 +801,7 @@ def parse_inp(inp_path: Path) -> dict:
                 try:
                     iso_out[flag] = _parse_bool(kv[flag], flag)
                 except ValueError:
-                    pass  # validate_inp will report the invalid value
+                    iso_out[flag] = kv[flag]  # see version_date in the [dataset] parsing, above
 
         # Parse quantum labels
         if shared_qn and shared_labels is not None:

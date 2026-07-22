@@ -4,9 +4,32 @@
 
 v1 targets a polished tool for generating the base ExoMol template only. Broadening and photodissociation data will get their own def-template structures in a future v2, once the tool is generalized to support multiple template types.
 
-1. **Shift validation from strict/blocking to assistive/overridable** — currently, `validate_inp` hard-blocks on anything in `_VALIDATION_ERRORS` (e.g. degeneracy checks, unknown quantum-case labels, malformed fields) with no way past it; only `_VALIDATION_WARNINGS` are soft (`y/N` to proceed). The next goal is to give users the freedom to force a build through with unusual/unexpected data if they intentionally want to, rather than every mismatch being a hard stop — the tool should suggest and flag issues, not just refuse. Needs a design pass on which current errors are genuinely un-buildable (e.g. missing required files) vs. which are really just "this looks wrong, are you sure?" checks that should become overridable
+1. **Extend CI coverage** — three gaps identified after shipping `--force` in 0.10.0:
+   - `ci.yml` hardcodes Python 3.12 only, with no matrix dimension for interpreter version. The README claims "Requires Python 3.8+" but nothing has continuously verified that floor since it was hand-tested via podman back in v0.5.4 — add Python 3.8 as a second matrix dimension alongside 3.12, across all three OSes (full 3×2 matrix)
+   - `test_fetch_exomol_sample.py` and `test_force_override.py` are self-checks that exist but are never actually invoked by `ci.yml` — wire both in as CI steps, placed right after `pip install` so they fail fast before any network fetch is spent
+   - Nothing in CI exercises the `--force` path at all — add `.github/scripts/check_force_override.py` (same standalone-script pattern as `check_aloha_ref.py`), riding along in the existing AloHa job step reusing already-fetched `27Al-1H` data: corrupt a copy of `AloHa.inp`'s `27Al-1H` section (non-numeric `max_temperature`, blank `point_group`, out-of-range irreps degeneracy, invalid `quantum_case_label`), assert the build exits 1 without `--force`, then exits 0 with `--force` and writes the raw/blank values through correctly (including no literal `"None"` from a blank required field)
 
 `COmet` cannot rejoin the CI matrix via `fetch_exomol_sample.py` — it isn't a published/live dataset on exomol.com yet, so there's nothing there to fetch. Revisit if/when it's published.
+
+## [0.10.0] — 2026-07-22 — Assistive/overridable validation via --force
+
+### Added
+- **`--force` flag (build step)** — pushes the build past `.inp` validation errors and missing required fields instead of blocking, writing best-effort output (raw/blank values where a field couldn't be resolved) rather than refusing to build. Also auto-confirms the existing warnings `y/N` prompt. Errors and missing fields are always printed in full regardless of `--force`, with a banner naming what was overridden. Deliberately all-or-nothing rather than a per-check allowlist — this is an internal tool for expert (Masters-level) users who know their data, not a general-audience one, and there's no guarantee the ExoMol `.def` schema stays fixed enough to justify hardcoding which checks are "safe" to relax
+- **`parse_inp` preserves raw values on failed coercion** — a non-blank `version_date`/`max_temperature`/isotopologue boolean flag that fails its normal type parse is now kept as raw text instead of being silently dropped, so `--force` has something to write through instead of an empty field
+
+### Changed
+- **`--init`'s wipe-and-regenerate flag renamed `--force` → `--reset-input`** — frees up `--force` for the build-time meaning above; the two were unrelated operations sharing a confusing name
+
+### Fixed
+- **`.def` rendered the literal text `"None"`** for any required field left unresolved — `renderer._fmt_line` passed a `None` value through `str()` rather than treating it as blank. Most user-suppliable fields default to explicit `None` in the extraction schema, and `dict.get(key, "")` only applies its fallback when the key is absent, not when it's present with value `None`. Only reachable once `--force` could push a build past a missing required field, but the underlying bug predates this change
+
+### Scope
+Kept unconditionally blocking, with no `--force` override: `validator.py`'s file-discovery/structural checks (missing work directory, no matching files, wrong file counts, ambiguous dataset names, too-few-columns spot checks). These guard against there being no file or column to read at all, not an unusual value in one, and they run before `--init`/build has a `.inp` to check anything against.
+
+### Verified
+- Full `--init` → build pipeline for `samples/AloHa` (both isotopologues) and `samples/COmet` rebuilds clean with no `--force` passed: AloHa still matches its reference modulo the same 3 pre-existing documented gaps, COmet still byte-identical
+- A deliberately broken `AloHa.inp` (invalid `max_temperature`, blank `point_group`, out-of-range irreps degeneracy, unrecognized `quantum_case_label`) correctly blocks without `--force` (exit 1, all 5 errors printed) and correctly builds with `--force` (exit 0), writing the raw/blank values through and printing everything it overrode
+- `test_force_override.py` — new self-check covering `parse_inp`'s raw-value preservation and the `None`-renders-blank fix
 
 ## [0.9.1] — 2026-07-21 — Fix Python 3.12 CI crash from the v0.9.0 streaming fix
 

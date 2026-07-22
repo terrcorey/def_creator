@@ -55,7 +55,7 @@ def _print_errors(items: list[str], label: str) -> None:
         print()
 
 
-def run_init(ctx: DefContext, verbose_input: bool = True, force: bool = False) -> None:
+def run_init(ctx: DefContext, verbose_input: bool = True, reset_input: bool = False) -> None:
     """
     --init workflow:
       1. Validate required files exist for each isotopologue
@@ -64,22 +64,22 @@ def run_init(ctx: DefContext, verbose_input: bool = True, force: bool = False) -
       4. Summarise .states columns for each isotopologue
       5. Generate and write the blank .inp template
     """
-    logging.info(f"context: run_init for '{ctx.work_dir}' (ds_name='{ctx.ds_name}', force={force})")
+    logging.info(f"context: run_init for '{ctx.work_dir}' (ds_name='{ctx.ds_name}', reset_input={reset_input})")
 
-    # If --force, remove existing .inp and temp caches before regenerating
-    if force:
+    # If --reset-input, remove existing .inp and temp caches before regenerating
+    if reset_input:
         removed = 0
         inp_path = ctx.inp_path()
         if inp_path.exists():
             inp_path.unlink()
-            logging.info(f"context: --force: removed '{inp_path}'")
+            logging.info(f"context: --reset-input: removed '{inp_path}'")
             print(f"  Removed: {inp_path}")
             removed += 1
         for iso_slug in ctx.isotopologue_slugs():
             temp_path = ctx.def_json_temp_path(iso_slug)
             if temp_path.exists():
                 temp_path.unlink()
-                logging.info(f"context: --force: removed '{temp_path}'")
+                logging.info(f"context: --reset-input: removed '{temp_path}'")
                 print(f"  Removed: {temp_path}")
                 removed += 1
         if removed == 0:
@@ -151,8 +151,8 @@ def run_init(ctx: DefContext, verbose_input: bool = True, force: bool = False) -
     )
     inp_path = ctx.inp_path()
     if inp_path.exists():
-        logging.warning(f"context: '{inp_path}' already exists — skipping (use --force to overwrite)")
-        print(f"  Skipped: '{inp_path.name}' already exists (use --init --force to overwrite)")
+        logging.warning(f"context: '{inp_path}' already exists — skipping (use --reset-input to overwrite)")
+        print(f"  Skipped: '{inp_path.name}' already exists (use --init --reset-input to overwrite)")
     else:
         inp_handler.write_inp(content, inp_path)
         print(f"  Written: {inp_path}")
@@ -174,15 +174,19 @@ def run_init(ctx: DefContext, verbose_input: bool = True, force: bool = False) -
     print()
 
 
-def run_build(ctx: DefContext) -> None:
+def run_build(ctx: DefContext, force: bool = False) -> None:
     """
     Standard (no --init) workflow:
       1. Parse and validate .inp file
       2. For each isotopologue: load .def.json temp cache, merge with user input, validate completeness
       3. Optionally derive InChI/InChIKey from SMILES
       4. Render .def file
+
+    force=True pushes the build past .inp validation errors and missing required fields
+    instead of blocking on them, writing best-effort output (raw/blank values where a field
+    couldn't be resolved). Errors are still printed in full either way.
     """
-    logging.info(f"context: run_build for '{ctx.work_dir}' (ds_name='{ctx.ds_name}')")
+    logging.info(f"context: run_build for '{ctx.work_dir}' (ds_name='{ctx.ds_name}', force={force})")
 
     # Check .inp exists
     inp_path = ctx.inp_path()
@@ -218,16 +222,24 @@ def run_build(ctx: DefContext) -> None:
     if inp_warnings:
         print(f"\nNote — {len(inp_warnings)} thing(s) to verify in {inp_path.name}:\n")
         _print_errors(inp_warnings, "warning")
-        answer = input("Continue with build? [y/N] ").strip().lower()
-        if answer != "y":
-            print("Build cancelled.")
-            sys.exit(0)
+        if not force:
+            answer = input("Continue with build? [y/N] ").strip().lower()
+            if answer != "y":
+                print("Build cancelled.")
+                sys.exit(0)
 
     if inp_errors:
         print(f"\n{len(inp_errors)} error(s) in {inp_path.name}:\n")
         _print_errors(inp_errors, "error")
-        print("Fix the above and re-run.")
-        sys.exit(1)
+        if not force:
+            print("Fix the above and re-run, or pass --force to build anyway.")
+            sys.exit(1)
+        print(
+            f"--force: proceeding past the {len(inp_errors)} error(s) above. This disables "
+            f"validation safety checks — the output may be incomplete or non-compliant with "
+            f"the ExoMol .def schema. Only use this if you understand the data and are "
+            f"prepared to fix up the result by hand.\n"
+        )
 
     # Resolve dataset-level base SMILES once (shared across all isotopologues).
     base_smiles = dataset_user.get("smiles", "").strip()
@@ -288,8 +300,12 @@ def run_build(ctx: DefContext) -> None:
                 f"context: '{iso_slug}' is missing required fields:\n"
                 + "\n".join(f"  - {m}" for m in missing)
             )
-            any_failed = True
-            continue
+            if not force:
+                any_failed = True
+                continue
+            print(f"  --force: '{iso_slug}' is missing {len(missing)} required field(s), writing incomplete output:")
+            for m in missing:
+                print(f"    - {m}")
 
         # Render
         output_path = ctx.def_output_path(iso_slug)

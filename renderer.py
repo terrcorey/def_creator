@@ -23,11 +23,22 @@ _NON_QUANTA_LABELS = {"unc", "tau", "gfactor"}  # boolean-flag columns, not quan
 
 
 def _fmt_line(value: str, comment: str) -> str:
-    """Formats one .def line: left-aligned value padded to _COMMENT_COL, then '# comment'."""
-    value = config.to_ascii(str(value).strip())
+    """Formats one .def line: left-aligned value padded to _COMMENT_COL, then '# comment'.
+    A None value (a required field left unresolved under --force) renders as blank, not
+    the literal text "None"."""
+    value = "" if value is None else config.to_ascii(str(value).strip())
     comment = config.to_ascii(str(comment).strip())
     padding = max(1, _COMMENT_COL - len(value))
     return value + " " * padding + "# " + comment + "\n"
+
+
+def _fmt_temperature(val) -> str:
+    """Formats max_temperature as %.2f; falls back to the raw value if --force forced through
+    a non-numeric string (parse_inp keeps it as-is rather than dropping it)."""
+    try:
+        return f"{float(val):.2f}"
+    except (TypeError, ValueError):
+        return str(val)
 
 
 def _bool_to_int(val) -> int:
@@ -106,7 +117,7 @@ def _build_lines(d: dict) -> list[str]:
         out.append(_fmt_line(deg, f"Nuclear spin degeneracy {i}"))
 
     # Dataset flags
-    out.append(_fmt_line(f"{float(dataset.get('max_temperature', 0)):.2f}", "Maximum temperature of linelist"))
+    out.append(_fmt_line(_fmt_temperature(dataset.get("max_temperature", 0)), "Maximum temperature of linelist"))
     out.append(_fmt_line(dataset.get("num_pressure_broadeners", 0), "No. of pressure broadeners available"))
     out.append(_fmt_line(_bool_to_int(dataset.get("cooling_function_available")), "Cooling function availability (1=yes, 0=no)"))
     out.append(_fmt_line(_bool_to_int(dataset.get("specific_heat_available")), "Specific heat availability (1=yes, 0=no)"))
